@@ -1,38 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../shared/models/user_model.dart';
-import '../services/local_storage_service.dart';
+import '../providers/app_settings_provider.dart';
+import '../services/storage_service.dart';
 
 class AuthNotifier extends AsyncNotifier<UserModel> {
-  static const _kUserPhoneKey = 'user_phone';
+  static const _kUserLoginKey = 'user_login';
+  static const _kUserTokenKey = 'user_token';
+  static const _kRememberMeKey = 'remember_me';
 
   @override
   Future<UserModel> build() async {
-    final savedPhone = LocalStorageService.instance.read(_kUserPhoneKey) ?? '';
+    final savedLogin = StorageService.instance.read(_kUserLoginKey) ?? '';
+    final savedToken = await StorageService.instance.secureRead(_kUserTokenKey);
     return UserModel(
-      phoneNumber: savedPhone,
-      token: null,
-      isAuthenticated: false,
+      login: savedLogin,
+      token: savedToken,
+      isAuthenticated: (savedToken != null && savedToken.isNotEmpty),
     );
   }
 
-  Future<void> signIn(String phone, String password) async {
+  Future<void> signIn(String login, String password, {required bool rememberMe}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(authRepositoryProvider);
-      final data = await repo.login(phone, password);
+      final data = await repo.login(login, password);
       final user = UserModel.fromJson(data);
 
-      await LocalStorageService.instance.write(_kUserPhoneKey, user.phoneNumber);
+      await StorageService.instance.write(_kUserLoginKey, user.login);
+      await StorageService.instance.writeBool(_kRememberMeKey, rememberMe);
+      if (user.token != null && user.token!.isNotEmpty) {
+        await StorageService.instance.secureWrite(_kUserTokenKey, user.token!);
+      }
       return user;
     });
   }
 
+  bool getRememberMe() => StorageService.instance.readBool(_kRememberMeKey);
+
   Future<void> logout() async {
-    final currentPhone = state.asData?.value.phoneNumber ?? '';
+    final currentLogin = state.asData?.value.login ?? '';
+    await StorageService.instance.secureRemove(_kUserTokenKey);
+    await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
     state = AsyncValue.data(
       UserModel(
-        phoneNumber: currentPhone,
+        login: currentLogin,
         token: null,
         isAuthenticated: false,
       ),

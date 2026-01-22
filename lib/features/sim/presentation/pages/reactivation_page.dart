@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../l10n/gen/app_localizations.dart';
+
+import '../../../../../core/services/operation_validator.dart';
 
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
@@ -7,14 +10,14 @@ import 'widgets/step_search_sim.dart';
 import 'widgets/step_check_client.dart';
 import 'widgets/step_new_sim_details.dart';
 
-class SimReactivationPage extends StatefulWidget {
+class SimReactivationPage extends ConsumerStatefulWidget {
   const SimReactivationPage({super.key});
 
   @override
-  State<SimReactivationPage> createState() => _SimReactivationPageState();
+  ConsumerState<SimReactivationPage> createState() => _SimReactivationPageState();
 }
 
-class _SimReactivationPageState extends State<SimReactivationPage> {
+class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
   int _currentStep = 1;
 
   final Map<String, TextEditingController> _ctrls = {
@@ -225,6 +228,14 @@ class _SimReactivationPageState extends State<SimReactivationPage> {
   void _submit() async {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+
+    final ok = await OperationValidator.validate(
+      context,
+      ref,
+      reason: l10n.sim_react_title,
+    );
+    if (!ok) return;
+
     _closeKeyboard();
     showDialog(
         context: context,
@@ -312,6 +323,7 @@ class _SimReactivationPageState extends State<SimReactivationPage> {
             Expanded(child: OutlinedButton(
                 onPressed: () => _goToStep(_currentStep - 1),
                 style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: theme.dividerColor),
                   minimumSize: const Size.fromHeight(btnHeight),
                   shape: RoundedRectangleBorder(borderRadius: borderRadius),
                 ),

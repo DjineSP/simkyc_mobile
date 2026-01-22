@@ -1,64 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
+import '../../data/models/history_item.dart';
+import '../providers/history_provider.dart';
 
-class HistoryManagementPage extends StatefulWidget {
+class HistoryManagementPage extends ConsumerStatefulWidget {
   const HistoryManagementPage({super.key});
 
   @override
-  State<HistoryManagementPage> createState() => _HistoryManagementPageState();
+  ConsumerState<HistoryManagementPage> createState() => _HistoryManagementPageState();
 }
 
-class _HistoryManagementPageState extends State<HistoryManagementPage> {
+class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollCtrl = ScrollController();
 
-  late final List<_Customer> _allCustomers;
-  String _query = '';
-  bool _isLoading = true;
   DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
     super.initState();
-    // Génération simulée
-    _allCustomers = List.generate(
-      100,
-          (index) => _Customer(
-        name: 'Client ${index + 1}',
-        msisdn: '6${(90000000 + index).toString()}',
-        idNumber: 'CM${1000 + index}',
-        statusIndex: index % 3,
-        createdAt: DateTime.now().subtract(Duration(days: index % 30)),
-      ),
-    );
-    _loadData();
+    _scrollCtrl.addListener(_onScroll);
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+  @override
+  void dispose() {
+    _scrollCtrl
+      ..removeListener(_onScroll)
+      ..dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
-  List<_Customer> get _filteredCustomers {
-    return _allCustomers.where((c) {
-      final q = _query.toLowerCase();
-      final matchesText = c.name.toLowerCase().contains(q) ||
-          c.msisdn.contains(q) ||
-          c.idNumber.toLowerCase().contains(q);
-
-      bool matchesDate = true;
-      if (_selectedDateRange != null) {
-        matchesDate = c.createdAt.isAfter(_selectedDateRange!.start.subtract(const Duration(days: 1))) &&
-            c.createdAt.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
-      }
-      return matchesText && matchesDate;
-    }).toList();
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 250) {
+      ref.read(historyProvider.notifier).loadMore();
+    }
   }
 
   @override
@@ -67,7 +51,9 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
-    final displayedList = _filteredCustomers;
+    final historyState = ref.watch(historyProvider);
+    final displayedList = historyState.items;
+    final isLoading = historyState.isLoading;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -79,13 +65,14 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
               children: [
                 TextField(
                   controller: _searchController,
-                  onChanged: (v) => setState(() => _query = v),
+                  onChanged: (v) => ref.read(historyProvider.notifier).setQuery(v),
                   decoration: InputDecoration(
                     hintText: l10n.history_search_hint,
                     prefixIcon: const Icon(Icons.search),
                     fillColor: theme.colorScheme.surface,
                   ),
                 ),
+
                 const SizedBox(height: 10),
                 _buildDateSelector(theme, l10n),
               ],
@@ -93,7 +80,7 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _loadData,
+              onRefresh: () => ref.read(historyProvider.notifier).refresh(),
               color: AppColors.primary,
               child: SkeletonizerConfig(
                 data: SkeletonizerConfigData(
@@ -107,16 +94,46 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
                   ),
                 ),
                 child: Skeletonizer(
-                  enabled: _isLoading,
-                  child: displayedList.isEmpty && !_isLoading
+                  enabled: isLoading,
+                  child: displayedList.isEmpty && !isLoading
                       ? _buildEmptyState(l10n)
                       : ListView.separated(
+                          controller: _scrollCtrl,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          itemCount: _isLoading ? 6 : displayedList.length,
+                          itemCount: isLoading
+                              ? 6
+                              : displayedList.length + (historyState.isLoadingMore ? 1 : 0),
                           separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
-                            if (_isLoading) return const _CustomerCardPlaceholder();
-                            return _CustomerCard(customer: displayedList[index]);
+                            if (isLoading) return const _HistoryItemCardPlaceholder();
+                            if (index >= displayedList.length) {
+                              return const _HistoryLoadingMoreCard();
+                            }
+
+                            final prev = index > 0 ? displayedList[index - 1] : null;
+                            final item = displayedList[index];
+
+                            final showHeader = prev == null ||
+                                !_isSameDay(prev.createdAt, item.createdAt);
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (showHeader)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Text(
+                                      DateFormat('dd MMMM yyyy').format(item.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: theme.colorScheme.onSurface.withOpacity(0.65),
+                                      ),
+                                    ),
+                                  ),
+                                _HistoryItemCard(item: item),
+                              ],
+                            );
                           },
                         ),
                 ),
@@ -140,7 +157,10 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
             child: child!,
           ),
         );
-        if (picked != null) setState(() => _selectedDateRange = picked);
+        if (picked != null) {
+          setState(() => _selectedDateRange = picked);
+          await ref.read(historyProvider.notifier).setDateRange(picked);
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -166,7 +186,10 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
             ),
             if (_selectedDateRange != null)
               GestureDetector(
-                onTap: () => setState(() => _selectedDateRange = null),
+                onTap: () async {
+                  setState(() => _selectedDateRange = null);
+                  await ref.read(historyProvider.notifier).setDateRange(null);
+                },
                 child: const Icon(Icons.cancel, size: 18, color: AppColors.primary),
               ),
           ],
@@ -180,18 +203,13 @@ class _HistoryManagementPageState extends State<HistoryManagementPage> {
   }
 }
 
-class _Customer {
-  final String name;
-  final String msisdn;
-  final String idNumber;
-  final int statusIndex; // 0: Actif, 1: Suspendu, 2: Désactivé
-  final DateTime createdAt;
-  const _Customer({required this.name, required this.msisdn, required this.idNumber, required this.statusIndex, required this.createdAt});
+bool _isSameDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
-class _CustomerCard extends StatelessWidget {
-  final _Customer customer;
-  const _CustomerCard({required this.customer});
+class _HistoryItemCard extends StatelessWidget {
+  final HistoryItem item;
+  const _HistoryItemCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +218,7 @@ class _CustomerCard extends StatelessWidget {
 
     final statuses = [l10n.history_status_active, l10n.history_status_suspended, l10n.history_status_inactive];
     final colors = [Colors.green, Colors.orange, Colors.red];
-    final color = colors[customer.statusIndex];
+    final color = colors[item.statusIndex];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -215,17 +233,17 @@ class _CustomerCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(customer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                child: Text(statuses[customer.statusIndex], style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: Text(statuses[item.statusIndex], style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text('MSISDN: ${customer.msisdn}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
-          Text(DateFormat('dd MMMM yyyy').format(customer.createdAt), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+          Text('MSISDN: ${item.msisdn}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
+          Text(DateFormat('HH:mm').format(item.createdAt), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -259,8 +277,8 @@ class _CustomerCard extends StatelessWidget {
   }
 }
 
-class _CustomerCardPlaceholder extends StatelessWidget {
-  const _CustomerCardPlaceholder();
+class _HistoryItemCardPlaceholder extends StatelessWidget {
+  const _HistoryItemCardPlaceholder();
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -269,6 +287,27 @@ class _CustomerCardPlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+}
+
+class _HistoryLoadingMoreCard extends StatelessWidget {
+  const _HistoryLoadingMoreCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
       ),
     );
   }

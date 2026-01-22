@@ -19,10 +19,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_login_subtitle => 'Welcome back!';
 
   @override
+  String get auth_field_login => 'Login';
+
+  @override
   String get auth_field_phone => 'Phone Number';
 
   @override
   String get auth_field_password => 'Password';
+
+  @override
+  String get auth_remember_me => 'Remember me';
 
   @override
   String get auth_button_submit => 'Sign In';
@@ -31,13 +37,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_error_invalid_phone => 'Invalid format (ex: 6XX XX XX XX)';
 
   @override
+  String get auth_error_password_required => 'Password is required';
+
+  @override
+  String get auth_error_auth_failed => 'Authentication failed.';
+
+  @override
   String get auth_forgot_password => 'Forgot password?';
+
+  @override
+  String get auth_forgot_password_dialog_body => 'Please contact the admin.';
 
   @override
   String get auth_no_account => 'No account?';
 
   @override
   String get auth_contact_admin => 'Contact admin';
+
+  @override
+  String get auth_contact_admin_dialog_title => 'Admin';
+
+  @override
+  String get auth_contact_admin_dialog_body => 'Email: admin@cellcom.cm';
+
+  @override
+  String get auth_footer => '2026 Cellcom';
+
+  @override
+  String get common_error_title => 'Error';
+
+  @override
+  String get common_info_title => 'Info';
+
+  @override
+  String get common_ok => 'OK';
+
+  @override
+  String get common_cancel => 'Cancel';
+
+  @override
+  String get op_validate_title => 'Validation required';
+
+  @override
+  String get op_validate_subtitle => 'Choose a method to continue.';
+
+  @override
+  String get op_validate_use_biometric => 'Biometric';
+
+  @override
+  String get op_validate_use_password => 'Password';
+
+  @override
+  String get op_validate_user_not_identified => 'User not identified.';
+
+  @override
+  String get op_validate_biometric_failed =>
+      'Biometric authentication failed or was cancelled.';
 
   @override
   String get home_nav_dashboard => 'Dashboard';

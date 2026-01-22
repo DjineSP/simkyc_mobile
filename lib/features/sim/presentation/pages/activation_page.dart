@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
 import 'dart:io';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/services/operation_validator.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
 
@@ -11,14 +13,14 @@ import 'widgets/step_id_details.dart';
 import 'widgets/step_photo_upload.dart';
 import 'widgets/step_validation.dart';
 
-class SimActivationPage extends StatefulWidget {
+class SimActivationPage extends ConsumerStatefulWidget {
   const SimActivationPage({super.key});
 
   @override
-  State<SimActivationPage> createState() => _SimActivationPageState();
+  ConsumerState<SimActivationPage> createState() => _SimActivationPageState();
 }
 
-class _SimActivationPageState extends State<SimActivationPage> {
+class _SimActivationPageState extends ConsumerState<SimActivationPage> {
   int _currentStep = 1;
   bool _isSubmitting = false;
 
@@ -146,6 +148,14 @@ class _SimActivationPageState extends State<SimActivationPage> {
 
   void _submitFinal() async {
     final l10n = AppLocalizations.of(context)!;
+
+    final ok = await OperationValidator.validate(
+      context,
+      ref,
+      reason: l10n.sim_act_title,
+    );
+    if (!ok) return;
+
     setState(() => _isSubmitting = true);
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;

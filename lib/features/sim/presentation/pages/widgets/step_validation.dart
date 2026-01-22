@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import '../../../../../core/constants/app_colors.dart';
+import '../../../../../l10n/gen/app_localizations.dart';
 import '../components/activation_helpers.dart';
 
 class StepValidation extends StatelessWidget {
@@ -19,6 +19,9 @@ class StepValidation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -26,23 +29,22 @@ class StepValidation extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center, // Aligne la colonne au centre
           children: [
             const SizedBox(width: double.infinity), // Force la colonne à prendre toute la largeur pour le centrage
-            const Text(
-              'Vérification finale',
+            Text(
+              l10n.check_title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: AppColors.slate,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Vérifiez scrupuleusement les données avant la soumission.',
+              l10n.check_subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
                 fontStyle: FontStyle.italic, // Mise en italique
-                color: AppColors.slate.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -50,65 +52,69 @@ class StepValidation extends StatelessWidget {
         const SizedBox(height: 20),
 
         // 1. SECTION SIM
-        _buildHeaderSection("Détails de la SIM"),
+        _buildHeaderSection(theme, l10n.sim_step_1),
         CardContainer(
           child: Column(
             children: [
-              _infoRow('Numéro (MSISDN)', ctrls['msisdn']?.text),
-              _infoRow('Numéro de série', ctrls['serial']?.text),
+              _infoRow(theme, l10n.check_label_msisdn, ctrls['msisdn']?.text),
+              _infoRow(theme, l10n.check_label_serial, ctrls['serial']?.text),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
         // 2. SECTION CLIENT
-        _buildHeaderSection("Identité du Client"),
+        _buildHeaderSection(theme, l10n.check_section_identity),
         CardContainer(
           child: Column(
             children: [
-              _infoRow('Nom complet', '${ctrls['firstName']?.text} ${ctrls['lastName']?.text}'),
-              _infoRow('Date de naissance', ctrls['dob']?.text),
-              _infoRow('Lieu de naissance', ctrls['pob']?.text),
-              _infoRow('Genre', isMale ? 'Masculin' : 'Féminin'),
-              _infoRow('Profession', ctrls['job']?.text),
+              _infoRow(
+                theme,
+                l10n.check_label_name,
+                '${ctrls['firstName']?.text ?? ''} ${ctrls['lastName']?.text ?? ''}'.trim(),
+              ),
+              _infoRow(theme, l10n.check_label_dob, ctrls['dob']?.text),
+              _infoRow(theme, l10n.check_label_pob, ctrls['pob']?.text),
+              _infoRow(theme, l10n.check_label_gender, isMale ? l10n.step_cust_male : l10n.step_cust_female),
+              _infoRow(theme, l10n.check_label_job, ctrls['job']?.text),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
         // 3. SECTION COORDONNÉES
-        _buildHeaderSection("Coordonnées"),
+        _buildHeaderSection(theme, l10n.check_section_coords),
         CardContainer(
           child: Column(
             children: [
-              _infoRow('Adresse Géographique', ctrls['geo']?.text),
-              _infoRow('Adresse Postale', ctrls['post']?.text),
-              _infoRow('Email', ctrls['email']?.text),
+              _infoRow(theme, l10n.check_label_address, ctrls['geo']?.text),
+              _infoRow(theme, l10n.check_label_post, ctrls['post']?.text),
+              _infoRow(theme, l10n.check_label_email, ctrls['email']?.text),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
         // 4. SECTION PIÈCE D'IDENTITÉ
-        _buildHeaderSection("Document d'identification"),
+        _buildHeaderSection(theme, l10n.check_section_id),
         CardContainer(
           child: Column(
             children: [
-              _infoRow('Nature', ctrls['idNature']?.text),
-              _infoRow('N° de pièce', ctrls['idNumber']?.text),
-              _infoRow('Date de validité', ctrls['idValidity']?.text),
+              _infoRow(theme, l10n.check_label_id_nature, ctrls['idNature']?.text),
+              _infoRow(theme, l10n.check_label_id_number, ctrls['idNumber']?.text),
+              _infoRow(theme, l10n.check_label_id_validity, ctrls['idValidity']?.text),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
         // 5. SECTION PHOTOS
-        _buildHeaderSection("Preuves visuelles"),
+        _buildHeaderSection(theme, l10n.sim_step_4),
         Row(
           children: [
-            _imagePreview('Recto de la pièce', frontImg),
+            _imagePreview(theme, l10n.step_photo_front_title, frontImg),
             const SizedBox(width: 12),
-            _imagePreview('Verso de la pièce', backImg),
+            _imagePreview(theme, l10n.step_photo_back_title, backImg),
           ],
         ),
         const SizedBox(height: 24),
@@ -117,15 +123,14 @@ class StepValidation extends StatelessWidget {
   }
 
   // Petit titre de section rouge et stylisé
-  Widget _buildHeaderSection(String title) {
+  Widget _buildHeaderSection(ThemeData theme, String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 11,
+        style: theme.textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w900,
-          color: AppColors.red,
+          color: theme.colorScheme.primary,
           letterSpacing: 1.1,
         ),
       ),
@@ -133,7 +138,7 @@ class StepValidation extends StatelessWidget {
   }
 
   // Ligne d'information clé/valeur
-  Widget _infoRow(String label, String? value) {
+  Widget _infoRow(ThemeData theme, String label, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -141,13 +146,21 @@ class StepValidation extends StatelessWidget {
         children: [
           SizedBox(
             width: 130,
-            child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
             child: Text(
-              (value == null || value.isEmpty) ? 'Non renseigné' : value,
+              (value == null || value.isEmpty) ? '-' : value,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.slate),
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -156,7 +169,7 @@ class StepValidation extends StatelessWidget {
   }
 
   // Widget de prévisualisation d'image
-  Widget _imagePreview(String label, File? image) {
+  Widget _imagePreview(ThemeData theme, String label, File? image) {
     return Expanded(
       child: Column(
         children: [
@@ -164,19 +177,28 @@ class StepValidation extends StatelessWidget {
             height: 110,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: theme.dividerColor),
             ),
             child: image != null
                 ? ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.file(image, fit: BoxFit.cover),
             )
-                : const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+                : Icon(
+                    Icons.image_not_supported_outlined,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
           ),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

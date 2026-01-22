@@ -5,6 +5,7 @@
 
     <!-- Pour Android 13+ si besoin d'accès photos granulaires -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
 
     <application
         android:label="SIM-KYC"

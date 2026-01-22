@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 // Correction des imports vers ton architecture template
 import '../../../../app/routing/app_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/providers/app_settings_provider.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -21,6 +24,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
+
+      final user = await ref.read(authProvider.future);
+      if (!mounted) return;
+
+      final biometricEnabled = ref.read(biometricEnabledProvider);
+      if (user.isAuthenticated && biometricEnabled) {
+        final ok = await BiometricAuthService.instance.authenticate(
+          reason: 'Veuillez vous authentifier pour continuer',
+        );
+        if (!mounted) return;
+
+        if (ok) {
+          context.go(Routes.home);
+        } else {
+          context.go(Routes.login);
+        }
+        return;
+      }
+
+      if (user.isAuthenticated && ref.read(authProvider.notifier).getRememberMe()) {
+        context.go(Routes.login);
+        return;
+      }
+
       context.go(Routes.login);
     });
   }

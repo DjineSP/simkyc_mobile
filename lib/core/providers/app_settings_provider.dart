@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/local_storage_service.dart';
+import '../services/storage_service.dart';
 
 // L'état reste identique
 class AppSettingsState {
@@ -22,8 +22,8 @@ class AppSettingsNotifier extends Notifier<AppSettingsState> {
   @override
   AppSettingsState build() {
     // Initialisation
-    final theme = LocalStorageService.instance.read('theme');
-    final lang = LocalStorageService.instance.read('lang');
+    final theme = StorageService.instance.read('theme');
+    final lang = StorageService.instance.read('lang');
 
     return AppSettingsState(
       themeMode: _getTheme(theme),
@@ -40,12 +40,12 @@ class AppSettingsNotifier extends Notifier<AppSettingsState> {
   void updateTheme(ThemeMode mode) {
     // 'state' est maintenant reconnu car on hérite de Notifier<AppSettingsState>
     state = state.copyWith(themeMode: mode);
-    LocalStorageService.instance.write('theme', mode.name);
+    StorageService.instance.write('theme', mode.name);
   }
 
   void updateLocale(Locale locale) {
     state = state.copyWith(locale: locale);
-    LocalStorageService.instance.write('lang', locale.languageCode);
+    StorageService.instance.write('lang', locale.languageCode);
   }
 }
 
@@ -53,4 +53,26 @@ class AppSettingsNotifier extends Notifier<AppSettingsState> {
 // On utilise NotifierProvider (sans le .autoDispose pour garder les réglages en mémoire)
 final appSettingsProvider = NotifierProvider<AppSettingsNotifier, AppSettingsState>(() {
   return AppSettingsNotifier();
+});
+
+class BiometricSettingsNotifier extends Notifier<bool> {
+  static const _kBiometricEnabledKey = 'biometric_enabled';
+
+  @override
+  bool build() {
+    final v = StorageService.instance.read(_kBiometricEnabledKey);
+    return v == 'true';
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    state = enabled;
+    await StorageService.instance.write(
+      _kBiometricEnabledKey,
+      enabled ? 'true' : 'false',
+    );
+  }
+}
+
+final biometricEnabledProvider = NotifierProvider<BiometricSettingsNotifier, bool>(() {
+  return BiometricSettingsNotifier();
 });

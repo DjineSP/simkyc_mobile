@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/utils/phone_formatter.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 
 class LoginCard extends StatelessWidget {
-  final TextEditingController phoneCtrl;
+  final TextEditingController loginCtrl;
   final TextEditingController passCtrl;
-  final FocusNode phoneFocus;
+  final FocusNode loginFocus;
   final FocusNode passFocus;
-  final String? phoneError;
+  final String? loginError;
   final String? passError;
   final bool obscure;
   final bool isLoading;
-  final Function(String) onPhoneChanged;
+  final Function(String) onLoginChanged;
+  final bool rememberMe;
+  final ValueChanged<bool> onRememberMeChanged;
   final VoidCallback onToggleObscure;
   final VoidCallback onSignIn;
   final VoidCallback onForgotPassword;
@@ -21,15 +21,17 @@ class LoginCard extends StatelessWidget {
 
   const LoginCard({
     super.key,
-    required this.phoneCtrl,
+    required this.loginCtrl,
     required this.passCtrl,
-    required this.phoneFocus,
+    required this.loginFocus,
     required this.passFocus,
-    this.phoneError,
+    this.loginError,
     this.passError,
     required this.obscure,
     this.isLoading = false,
-    required this.onPhoneChanged,
+    required this.onLoginChanged,
+    required this.rememberMe,
+    required this.onRememberMeChanged,
     required this.onToggleObscure,
     required this.onSignIn,
     required this.onForgotPassword,
@@ -63,20 +65,19 @@ class LoginCard extends StatelessWidget {
           _buildHeader(theme, l10n),
           const SizedBox(height: 28),
 
-          _label(l10n.auth_field_phone, theme),
+          _label(l10n.auth_field_login, theme),
           const SizedBox(height: 8),
           TextField(
-            controller: phoneCtrl,
-            focusNode: phoneFocus,
-            onChanged: onPhoneChanged,
-            keyboardType: TextInputType.phone,
+            controller: loginCtrl,
+            focusNode: loginFocus,
+            onChanged: onLoginChanged,
+            keyboardType: TextInputType.text,
             style: TextStyle(color: scheme.onSurface),
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, PhoneFormatter()],
             decoration: _inputStyle(
               theme: theme,
-              hint: '6XX XX XX XX',
-              icon: Icons.phone_outlined,
-              error: phoneError,
+              hint: 'Login',
+              icon: Icons.person_outline,
+              error: loginError,
             ),
           ),
 
@@ -111,7 +112,20 @@ class LoginCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          Row(
+            children: [
+              Checkbox(
+                value: rememberMe,
+                onChanged: (v) => onRememberMeChanged(v ?? false),
+              ),
+              Expanded(
+                child: Text(
+                  l10n.auth_remember_me,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
 
           SizedBox(
             height: 54,

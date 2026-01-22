@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/local_storage_service.dart';
+import '../services/storage_service.dart';
 
 class UserProfile {
   final String name;
@@ -12,15 +12,15 @@ class UserNotifier extends Notifier<UserProfile> {
   @override
   UserProfile build() {
     // On récupère les données sauvegardées au démarrage
-    final name = LocalStorageService.instance.read('user_name') ?? '';
-    final age = LocalStorageService.instance.read('user_age') ?? '';
+    final name = StorageService.instance.read('user_name') ?? '';
+    final age = StorageService.instance.read('user_age') ?? '';
     return UserProfile(name: name, age: age);
   }
 
   void saveProfile(String name, String age) {
     state = UserProfile(name: name, age: age);
-    LocalStorageService.instance.write('user_name', name);
-    LocalStorageService.instance.write('user_age', age);
+    StorageService.instance.write('user_name', name);
+    StorageService.instance.write('user_age', age);
   }
 }
 

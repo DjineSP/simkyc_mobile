@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/routing/app_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../l10n/gen/app_localizations.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../widgets/login_card.dart';
 import '../widgets/red_circles_background.dart';
@@ -18,13 +19,14 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _phoneCtrl = TextEditingController();
+  final _loginCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _phoneFocus = FocusNode();
+  final _loginFocus = FocusNode();
   final _passFocus = FocusNode();
 
   bool _obscure = true;
-  String? _phoneError;
+  bool _rememberMe = false;
+  String? _loginError;
   String? _passError;
 
   @override
@@ -34,9 +36,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authProvider.future).then((user) {
         if (!mounted) return;
-        final savedPhone = user.phoneNumber;
-        if (savedPhone.isNotEmpty) {
-          _phoneCtrl.text = savedPhone;
+        final rememberMe = ref.read(authProvider.notifier).getRememberMe();
+        final savedLogin = user.login;
+        setState(() => _rememberMe = rememberMe);
+        if (rememberMe && savedLogin.isNotEmpty) {
+          _loginCtrl.text = savedLogin;
         }
       });
     });
@@ -44,42 +48,43 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
+    _loginCtrl.dispose();
     _passCtrl.dispose();
-    _phoneFocus.dispose();
+    _loginFocus.dispose();
     _passFocus.dispose();
     super.dispose();
   }
 
   Future<void> _handleSignIn() async {
-    final digits = _phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
+    final l10n = AppLocalizations.of(context)!;
+    final login = _loginCtrl.text.trim();
     final pass = _passCtrl.text.trim();
 
-    if (digits.length != 9 || !digits.startsWith('6')) {
+    if (login.isEmpty) {
       setState(() {
-        _phoneError = "Format invalide (ex: 6XX XX XX XX)";
+        _loginError = l10n.auth_error_invalid_phone;
         _passError = null;
       });
-      _phoneFocus.requestFocus();
+      _loginFocus.requestFocus();
       return;
     }
 
     if (pass.isEmpty) {
       setState(() {
-        _phoneError = null;
-        _passError = "Mot de passe requis";
+        _loginError = null;
+        _passError = l10n.auth_error_password_required;
       });
       _passFocus.requestFocus();
       return;
     }
 
     setState(() {
-      _phoneError = null;
+      _loginError = null;
       _passError = null;
     });
 
     try {
-      await ref.read(authProvider.notifier).signIn(digits, pass);
+      await ref.read(authProvider.notifier).signIn(login, pass, rememberMe: _rememberMe);
       if (!mounted) return;
 
       final user = ref.read(authProvider).asData?.value;
@@ -88,8 +93,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       } else {
         await showAppMessageDialog(
           context,
-          title: 'Erreur',
-          message: 'Authentification échouée.',
+          title: l10n.common_error_title,
+          message: l10n.auth_error_auth_failed,
           type: AppMessageType.error,
         );
       }
@@ -97,7 +102,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (!mounted) return;
       await showAppMessageDialog(
         context,
-        title: 'Erreur',
+        title: l10n.common_error_title,
         message: e.toString(),
         type: AppMessageType.error,
       );
@@ -108,6 +113,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final size = MediaQuery.of(context).size;
 
@@ -138,24 +144,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 420),
                         child: LoginCard(
-                          phoneCtrl: _phoneCtrl,
+                          loginCtrl: _loginCtrl,
                           passCtrl: _passCtrl,
-                          phoneFocus: _phoneFocus,
+                          loginFocus: _loginFocus,
                           passFocus: _passFocus,
-                          phoneError: _phoneError,
+                          loginError: _loginError,
                           passError: _passError,
                           obscure: _obscure,
                           isLoading: isLoading,
-                          onPhoneChanged: (_) => setState(() => _phoneError = null),
+                          onLoginChanged: (_) => setState(() => _loginError = null),
+                          rememberMe: _rememberMe,
+                          onRememberMeChanged: (v) => setState(() => _rememberMe = v),
                           onToggleObscure: () => setState(() => _obscure = !_obscure),
                           onSignIn: () => _handleSignIn(),
                           onForgotPassword: () => showAppMessageDialog(context,
-                              title: 'Info',
-                              message: 'Contactez l\'admin.',
+                              title: l10n.common_info_title,
+                              message: l10n.auth_forgot_password_dialog_body,
                               type: AppMessageType.info),
                           onContactAdmin: () => showAppMessageDialog(context,
-                              title: 'Admin',
-                              message: 'Email : admin@cellcom.cm',
+                              title: l10n.auth_contact_admin_dialog_title,
+                              message: l10n.auth_contact_admin_dialog_body,
                               type: AppMessageType.info),
                         ),
                       ),
@@ -167,7 +175,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Text(
-                          ' 2026 Cellcom',
+                          l10n.auth_footer,
                           style: TextStyle(
                               fontSize: 11,
                               color: theme.colorScheme.onSurface.withOpacity(0.5)

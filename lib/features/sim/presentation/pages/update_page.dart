@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 import '../../../../../l10n/gen/app_localizations.dart';
+
+import '../../../../../core/services/operation_validator.dart';
 
 
 import '../../../../shared/widgets/app_message_dialog.dart';
@@ -12,14 +15,14 @@ import 'widgets/step_search_update.dart';
 import 'widgets/step_edit_client.dart';
 import 'widgets/step_update_summary.dart';
 
-class SimUpdatePage extends StatefulWidget {
+class SimUpdatePage extends ConsumerStatefulWidget {
   const SimUpdatePage({super.key});
 
   @override
-  State<SimUpdatePage> createState() => _SimUpdatePageState();
+  ConsumerState<SimUpdatePage> createState() => _SimUpdatePageState();
 }
 
-class _SimUpdatePageState extends State<SimUpdatePage> {
+class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
   int _currentStep = 1;
   bool _isLoading = false;
 
@@ -324,6 +327,13 @@ class _SimUpdatePageState extends State<SimUpdatePage> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
+    final ok = await OperationValidator.validate(
+      context,
+      ref,
+      reason: '${l10n.home_action_update} - ${l10n.sim_update_btn_confirm}',
+    );
+    if (!ok) return;
+
     setState(() => _isLoading = true);
 
     showDialog(
@@ -434,6 +444,7 @@ class _SimUpdatePageState extends State<SimUpdatePage> {
               child: OutlinedButton(
                 onPressed: _isLoading ? null : () => _goToStep(_currentStep - 1),
                 style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: theme.dividerColor),
                   minimumSize: const Size.fromHeight(btnHeight),
                   shape: RoundedRectangleBorder(borderRadius: borderRadius),
                 ),

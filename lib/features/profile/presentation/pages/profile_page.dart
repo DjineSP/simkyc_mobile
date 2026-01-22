@@ -7,7 +7,10 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/providers/app_settings_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../app/routing/app_router.dart';
+import '../../../../shared/widgets/app_message_dialog.dart';
+import '../providers/profile_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -17,19 +20,59 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  bool _isLoading = true;
+  Future<void> _toggleBiometric(BuildContext context, WidgetRef ref, bool enable) async {
+    if (!enable) {
+      await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
+      return;
+    }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
+    final isSupported = await BiometricAuthService.instance.isDeviceSupported();
     if (!mounted) return;
-    setState(() => _isLoading = false);
+
+    if (!isSupported) {
+      await showAppMessageDialog(
+        context,
+        title: AppLocalizations.of(context)!.common_error_title,
+        message: 'Cet appareil ne supporte pas l\'authentification biométrique.',
+        type: AppMessageType.error,
+      );
+      await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
+      return;
+    }
+
+    final available = await BiometricAuthService.instance.getAvailableBiometrics();
+    if (!mounted) return;
+
+    if (available.isEmpty) {
+      await showAppMessageDialog(
+        context,
+        title: AppLocalizations.of(context)!.common_error_title,
+        message: 'Aucune biométrie n\'est configurée. Ajoutez une empreinte (ou FaceID) dans les réglages du téléphone.',
+        type: AppMessageType.error,
+      );
+      await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
+      return;
+    }
+
+    final ok = await BiometricAuthService.instance.authenticate(
+      reason: 'Activer l’empreinte digitale',
+    );
+    if (!mounted) return;
+
+    if (!ok) {
+      final code = BiometricAuthService.instance.lastErrorCode;
+      final msg = (code == 'biometricHardwareTemporarilyUnavailable')
+          ? 'Le capteur biométrique est temporairement indisponible. Réessayez dans quelques secondes.'
+          : 'Authentification biométrique échouée ou annulée.';
+      await showAppMessageDialog(
+        context,
+        title: AppLocalizations.of(context)!.common_error_title,
+        message: msg,
+        type: AppMessageType.error,
+      );
+    }
+
+    await ref.read(biometricEnabledProvider.notifier).setEnabled(ok);
   }
 
   @override
@@ -38,20 +81,31 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(authProvider).asData?.value;
     final settings = ref.watch(appSettingsProvider);
+    final biometricEnabled = ref.watch(biometricEnabledProvider);
+    final profileState = ref.watch(profileProvider);
+    final profile = profileState.data;
+    final isLoading = profileState.isLoading;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadData,
+          onRefresh: () => ref.read(profileProvider.notifier).refresh(),
           color: AppColors.primary,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               // CARTE AGENT
               Skeletonizer(
-                enabled: _isLoading,
-                child: _buildUserCard(theme, l10n, user?.phoneNumber?? ''),
+                enabled: isLoading,
+                child: _buildUserCard(
+                  theme,
+                  l10n,
+                  user?.login ?? '',
+                  fullName: profile?.fullName ?? '',
+                  agentId: profile?.agentId ?? '',
+                  roleLabel: profile?.roleLabel ?? '',
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -85,6 +139,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   title: l10n.profile_option_security_pass,
                   subtitle: l10n.profile_option_security_pass_desc,
                   onTap: () {},
+                ),
+                _ProfileToggleOption(
+                  icon: Icons.fingerprint_rounded,
+                  title: 'Empreinte digitale',
+                  subtitle: biometricEnabled
+                      ? 'Activée'
+                      : 'Désactivée',
+                  value: biometricEnabled,
+                  onChanged: (v) => _toggleBiometric(context, ref, v),
                 ),
                 _ProfileOption(
                   icon: Icons.history_toggle_off_rounded,
@@ -154,7 +217,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   // --- WIDGETS DE CONSTRUCTION ---
 
-  Widget _buildUserCard(ThemeData theme, var l10n, String phone) {
+  Widget _buildUserCard(
+    ThemeData theme,
+    var l10n,
+    String phone, {
+    required String fullName,
+    required String agentId,
+    required String roleLabel,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -175,11 +245,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pafing Tedy',
+                  fullName,
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: theme.colorScheme.onSurface),
                 ),
-                Text(l10n.profile_agent_id('AGT-00123'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-                Text(l10n.profile_role('Back Office'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                Text(l10n.profile_agent_id(agentId), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                Text(l10n.profile_role(roleLabel), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
               ],
             ),
           ),
@@ -264,6 +334,7 @@ class _ProfileOption extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
+
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
@@ -289,6 +360,71 @@ class _ProfileOption extends StatelessWidget {
             if (onTap != null) const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileToggleOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _ProfileToggleOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: theme.colorScheme.primary,
+          ),
+        ],
       ),
     );
   }

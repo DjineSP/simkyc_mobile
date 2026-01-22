@@ -1,10 +1,10 @@
 class UserModel {
-  final String phoneNumber;
+  final String login;
   final String? token;
   final bool isAuthenticated;
 
   UserModel({
-    required this.phoneNumber,
+    required this.login,
     this.token,
     this.isAuthenticated = false,
   });
@@ -12,12 +12,12 @@ class UserModel {
   // Pour transformer la réponse JSON du Backend en objet Dart
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      phoneNumber: json['phone_number'] ?? '',
+      login: json['login'] ?? '',
       token: json['token'],
       isAuthenticated: json['token'] != null,
     );
   }
 
   // Pour vider l'utilisateur à la déconnexion
-  factory UserModel.empty() => UserModel(phoneNumber: '', isAuthenticated: false);
+  factory UserModel.empty() => UserModel(login: '', isAuthenticated: false);
 }

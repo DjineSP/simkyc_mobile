@@ -116,6 +116,12 @@ abstract class AppLocalizations {
   /// **'Welcome back!'**
   String get auth_login_subtitle;
 
+  /// No description provided for @auth_field_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get auth_field_login;
+
   /// No description provided for @auth_field_phone.
   ///
   /// In en, this message translates to:
@@ -127,6 +133,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password'**
   String get auth_field_password;
+
+  /// No description provided for @auth_remember_me.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember me'**
+  String get auth_remember_me;
 
   /// No description provided for @auth_button_submit.
   ///
@@ -140,11 +152,29 @@ abstract class AppLocalizations {
   /// **'Invalid format (ex: 6XX XX XX XX)'**
   String get auth_error_invalid_phone;
 
+  /// No description provided for @auth_error_password_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get auth_error_password_required;
+
+  /// No description provided for @auth_error_auth_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed.'**
+  String get auth_error_auth_failed;
+
   /// No description provided for @auth_forgot_password.
   ///
   /// In en, this message translates to:
   /// **'Forgot password?'**
   String get auth_forgot_password;
+
+  /// No description provided for @auth_forgot_password_dialog_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Please contact the admin.'**
+  String get auth_forgot_password_dialog_body;
 
   /// No description provided for @auth_no_account.
   ///
@@ -157,6 +187,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact admin'**
   String get auth_contact_admin;
+
+  /// No description provided for @auth_contact_admin_dialog_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get auth_contact_admin_dialog_title;
+
+  /// No description provided for @auth_contact_admin_dialog_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Email: admin@cellcom.cm'**
+  String get auth_contact_admin_dialog_body;
+
+  /// No description provided for @auth_footer.
+  ///
+  /// In en, this message translates to:
+  /// **'2026 Cellcom'**
+  String get auth_footer;
+
+  /// No description provided for @common_error_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get common_error_title;
+
+  /// No description provided for @common_info_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get common_info_title;
+
+  /// No description provided for @common_ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get common_ok;
+
+  /// No description provided for @common_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get common_cancel;
+
+  /// No description provided for @op_validate_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Validation required'**
+  String get op_validate_title;
+
+  /// No description provided for @op_validate_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a method to continue.'**
+  String get op_validate_subtitle;
+
+  /// No description provided for @op_validate_use_biometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric'**
+  String get op_validate_use_biometric;
+
+  /// No description provided for @op_validate_use_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get op_validate_use_password;
+
+  /// No description provided for @op_validate_user_not_identified.
+  ///
+  /// In en, this message translates to:
+  /// **'User not identified.'**
+  String get op_validate_user_not_identified;
+
+  /// No description provided for @op_validate_biometric_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication failed or was cancelled.'**
+  String get op_validate_biometric_failed;
 
   /// No description provided for @home_nav_dashboard.
   ///

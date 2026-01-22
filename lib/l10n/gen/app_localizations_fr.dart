@@ -19,10 +19,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get auth_login_subtitle => 'Bon retour !';
 
   @override
+  String get auth_field_login => 'Login';
+
+  @override
   String get auth_field_phone => 'Numéro de téléphone';
 
   @override
   String get auth_field_password => 'Mot de passe';
+
+  @override
+  String get auth_remember_me => 'Se souvenir de moi';
 
   @override
   String get auth_button_submit => 'Se connecter';
@@ -31,13 +37,62 @@ class AppLocalizationsFr extends AppLocalizations {
   String get auth_error_invalid_phone => 'Format invalide (ex: 6XX XX XX XX)';
 
   @override
+  String get auth_error_password_required => 'Mot de passe requis';
+
+  @override
+  String get auth_error_auth_failed => 'Authentification échouée.';
+
+  @override
   String get auth_forgot_password => 'Mot de passe oublié ?';
+
+  @override
+  String get auth_forgot_password_dialog_body => 'Contactez l\'admin.';
 
   @override
   String get auth_no_account => 'Pas de compte ?';
 
   @override
   String get auth_contact_admin => 'Contacter l\'admin';
+
+  @override
+  String get auth_contact_admin_dialog_title => 'Admin';
+
+  @override
+  String get auth_contact_admin_dialog_body => 'Email : admin@cellcom.cm';
+
+  @override
+  String get auth_footer => '2026 Cellcom';
+
+  @override
+  String get common_error_title => 'Erreur';
+
+  @override
+  String get common_info_title => 'Info';
+
+  @override
+  String get common_ok => 'OK';
+
+  @override
+  String get common_cancel => 'Annuler';
+
+  @override
+  String get op_validate_title => 'Validation requise';
+
+  @override
+  String get op_validate_subtitle => 'Choisissez une méthode pour continuer.';
+
+  @override
+  String get op_validate_use_biometric => 'Empreinte digitale';
+
+  @override
+  String get op_validate_use_password => 'Mot de passe';
+
+  @override
+  String get op_validate_user_not_identified => 'Utilisateur non identifié.';
+
+  @override
+  String get op_validate_biometric_failed =>
+      'Authentification biométrique échouée ou annulée.';
 
   @override
   String get home_nav_dashboard => 'Tableau de bord';

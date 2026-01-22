@@ -6,39 +6,23 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/routing/app_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../l10n/gen/app_localizations.dart';
+import '../providers/home_provider.dart';
 
-class HomeContent extends StatefulWidget {
+class HomeContent extends ConsumerWidget {
   const HomeContent({super.key});
 
   @override
-  State<HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends State<HomeContent> {
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    if (!mounted) return;
-    setState(() => isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
-    if (!mounted) return;
-    setState(() => isLoading = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
 
-    final displayName = isLoading ? BoneMock.name : 'Pafing Tedy';
-    final roleLabel = isLoading ? BoneMock.words(1) : 'Administrateur';
+    final state = ref.watch(homeDashboardProvider);
+    final isLoading = state.isLoading;
+    final data = state.data;
+
+    final displayName = isLoading ? BoneMock.name : (data?.displayName ?? '');
+    final roleLabel = isLoading ? BoneMock.words(1) : (data?.roleLabel ?? '');
 
     final actions = [
       _ActionData(
@@ -62,26 +46,39 @@ class _HomeContentState extends State<HomeContent> {
     ];
 
     return RefreshIndicator(
-      onRefresh: _loadData,
+      onRefresh: () => ref.read(homeDashboardProvider.notifier).refresh(),
       color: AppColors.primary,
-      child: Skeletonizer(
-        enabled: isLoading,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.home_greeting,
-                  style: TextStyle(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (state.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    state.error!,
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5)
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
+              Text(
+                l10n.home_greeting,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5)
+                ),
+              ),
+              const SizedBox(height: 4),
+
+              Skeletonizer(
+                enabled: isLoading,
+                child: Row(
                   children: [
                     Expanded(
                       child: Text(
@@ -96,38 +93,46 @@ class _HomeContentState extends State<HomeContent> {
                     _buildRoleBadge(roleLabel, isDark),
                   ],
                 ),
-                const SizedBox(height: 20),
+              ),
 
-                // Barre de recherche adaptée au thème
-                _buildSearchBar(theme, l10n),
+              const SizedBox(height: 20),
 
-                const SizedBox(height: 20),
-                _KpiRow(
-                  totalActivations: isLoading ? '0000' : '12,450',
-                  activeSims: isLoading ? '0000' : '8,230',
+              // Barre de recherche adaptée au thème
+              _buildSearchBar(theme, l10n, isLoading),
+
+              const SizedBox(height: 20),
+              Skeletonizer(
+                enabled: isLoading,
+                child: _KpiRow(
+                  totalActivations: isLoading
+                      ? '0000'
+                      : (data?.totalActivations.toString() ?? '0'),
+                  activeSims: isLoading
+                      ? '0000'
+                      : (data?.activeSims.toString() ?? '0'),
                 ),
+              ),
 
-                const SizedBox(height: 24),
-                Text(
-                  l10n.home_section_actions,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
-                  ),
+              const SizedBox(height: 24),
+              Text(
+                l10n.home_section_actions,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.onSurface,
                 ),
-                const SizedBox(height: 12),
+              ),
+              const SizedBox(height: 12),
 
-                Column(
-                  children: actions.map((a) => _ActionTile(
-                    title: a.title,
-                    subtitle: a.subtitle,
-                    icon: a.icon,
-                    onTap: () => context.push(a.route!),
-                  )).toList(),
-                ),
-              ],
-            ),
+              Column(
+                children: actions.map((a) => _ActionTile(
+                  title: a.title,
+                  subtitle: a.subtitle,
+                  icon: a.icon,
+                  onTap: () => context.push(a.route!),
+                )).toList(),
+              ),
+            ],
           ),
         ),
       ),
@@ -152,7 +157,7 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildSearchBar(ThemeData theme, var l10n) {
+  Widget _buildSearchBar(ThemeData theme, var l10n, bool isLoading) {
     return TextField(
       enabled: !isLoading,
       decoration: InputDecoration(

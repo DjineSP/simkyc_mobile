@@ -1,31 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../data/models/reports_data.dart';
+import '../providers/reports_provider.dart';
 
-class ReportsPage extends StatefulWidget {
+class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage({super.key});
 
   @override
-  State<ReportsPage> createState() => _ReportsPageState();
+  ConsumerState<ReportsPage> createState() => _ReportsPageState();
 }
 
-class _ReportsPageState extends State<ReportsPage> {
-  String? _periodValue; // Null au départ pour l'init dans build ou initState
-  bool _isLoading = true;
+class _ReportsPageState extends ConsumerState<ReportsPage> {
+  String? _periodValue;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
+  DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _endOfDay(DateTime d) => DateTime(d.year, d.month, d.day, 23, 59, 59);
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+  Future<void> _applyPeriod(String value, AppLocalizations l10n) async {
+    final now = DateTime.now();
+    DateTime start;
+    DateTime end;
+
+    if (value == l10n.reports_period_today) {
+      start = _startOfDay(now);
+      end = _endOfDay(now);
+    } else if (value == l10n.reports_period_30d) {
+      start = _startOfDay(now.subtract(const Duration(days: 29)));
+      end = _endOfDay(now);
+    } else {
+      // default 7d
+      start = _startOfDay(now.subtract(const Duration(days: 6)));
+      end = _endOfDay(now);
+    }
+
+    await ref.read(reportsProvider.notifier).setDateRange(start: start, end: end);
   }
 
   @override
@@ -33,20 +45,39 @@ class _ReportsPageState extends State<ReportsPage> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
+    final state = ref.watch(reportsProvider);
+    final isLoading = state.isLoading;
+    final data = state.data;
+
     // Initialisation de la période par défaut basée sur l10n
-    _periodValue ??= l10n.reports_period_7d;
+    _periodValue ??= l10n.reports_period_today;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadData,
+          onRefresh: () => ref.read(reportsProvider.notifier).refresh(),
           color: AppColors.primary,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (state.error != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  child: Text(
+                    state.error!,
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               _buildHeader(l10n, theme),
-              _buildKpiGrid(l10n),
+              Skeletonizer(
+                enabled: isLoading,
+                child: _buildKpiGrid(l10n, data),
+              ),
               const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -62,15 +93,15 @@ class _ReportsPageState extends State<ReportsPage> {
               const SizedBox(height: 12),
               Expanded(
                 child: Skeletonizer(
-                  enabled: _isLoading,
+                  enabled: isLoading,
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     children: [
-                      _ReasonRow(reason: l10n.reports_reason_customer, count: 18),
-                      _ReasonRow(reason: l10n.reports_reason_sim_change, count: 7),
-                      _ReasonRow(reason: l10n.reports_reason_tech, count: 4),
-                      _ReasonRow(reason: l10n.reports_reason_fraud, count: 3),
-                      _ReasonRow(reason: l10n.reports_reason_other, count: 2),
+                      _ReasonRow(reason: l10n.reports_reason_customer, count: data?.reasons[ReportReasonType.customer] ?? 0),
+                      _ReasonRow(reason: l10n.reports_reason_sim_change, count: data?.reasons[ReportReasonType.simChange] ?? 0),
+                      _ReasonRow(reason: l10n.reports_reason_tech, count: data?.reasons[ReportReasonType.tech] ?? 0),
+                      _ReasonRow(reason: l10n.reports_reason_fraud, count: data?.reasons[ReportReasonType.fraud] ?? 0),
+                      _ReasonRow(reason: l10n.reports_reason_other, count: data?.reasons[ReportReasonType.other] ?? 0),
                     ],
                   ),
                 ),
@@ -116,7 +147,7 @@ class _ReportsPageState extends State<ReportsPage> {
             onChanged: (v) {
               if (v == null) return;
               setState(() => _periodValue = v);
-              _loadData();
+              _applyPeriod(v, l10n);
             },
           ),
         ],
@@ -124,38 +155,35 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildKpiGrid(var l10n) {
+  Widget _buildKpiGrid(var l10n, ReportsData? data) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Skeletonizer(
-        enabled: _isLoading,
-        child: Row(
-          children: [
-            Expanded(
-              child: _SummaryCard(
-                label: l10n.reports_kpi_activations,
-                value: '128',
-                accentColor: Colors.green,
-              ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryCard(
+              label: l10n.reports_kpi_activations,
+              value: (data?.activations ?? 0).toString(),
+              accentColor: Colors.green,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SummaryCard(
-                label: l10n.reports_kpi_reactivations,
-                value: '34',
-                accentColor: Colors.blue,
-              ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SummaryCard(
+              label: l10n.reports_kpi_reactivations,
+              value: (data?.reactivations ?? 0).toString(),
+              accentColor: Colors.blue,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SummaryCard(
-                label: l10n.reports_kpi_new_customers,
-                value: '56',
-                accentColor: Colors.orange,
-              ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SummaryCard(
+              label: l10n.reports_kpi_new_customers,
+              value: (data?.newCustomers ?? 0).toString(),
+              accentColor: Colors.orange,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
