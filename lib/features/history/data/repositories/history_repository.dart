@@ -1,62 +1,95 @@
-import 'dart:async';
+import 'package:flutter/material.dart';
+import '../../domain/entities/history_item.dart';
+import '../../domain/repositories/history_repository.dart';
+import '../datasources/history_remote_datasource.dart';
 
-import '../models/history_item.dart';
+class HistoryRepositoryImpl implements HistoryRepository {
+  final HistoryRemoteDataSource _dataSource;
 
-class HistoryRepository {
+  HistoryRepositoryImpl({HistoryRemoteDataSource? dataSource})
+      : _dataSource = dataSource ?? HistoryRemoteDataSourceImpl();
+
+  @override
   Future<List<HistoryItem>> fetchHistory({
     required int offset,
     required int limit,
     String query = '',
-    DateTimeRangeFilter? dateRange,
+    dynamic dateRange,
+    HistoryActionType? filterType,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 250));
+    List<HistoryItem> allItems = [];
 
-    final all = List.generate(
-      240,
-      (index) {
-        final createdAt = DateTime.now().subtract(Duration(
-          days: index % 60,
-          hours: index % 24,
-          minutes: (index * 7) % 60,
-        ));
-        return HistoryItem(
-          id: 'hist_${index + 1}',
-          name: 'Client ${index + 1}',
-          msisdn: '6${(90000000 + index).toString()}',
-          idNumber: 'CM${1000 + index}',
-          statusIndex: index % 3,
-          createdAt: createdAt,
-        );
-      },
-    )..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    // 1. Charger les données en parallèle depuis les 3 endpoints simulés
+    final futures = <Future<List<HistoryItem>>>[];
 
-    final q = query.trim().toLowerCase();
-
-    bool matchesDate(HistoryItem item) {
-      final r = dateRange;
-      if (r == null) return true;
-      return !item.createdAt.isBefore(r.start) && !item.createdAt.isAfter(r.end);
+    if (filterType == null || filterType == HistoryActionType.activation) {
+      futures.add(_dataSource.getActivations());
+    }
+    if (filterType == null || filterType == HistoryActionType.reactivation) {
+      futures.add(_dataSource.getReactivations());
+    }
+    if (filterType == null || filterType == HistoryActionType.update) {
+      futures.add(_dataSource.getUpdates());
     }
 
-    final filtered = all.where((item) {
-      final matchesText = q.isEmpty ||
-          item.name.toLowerCase().contains(q) ||
-          item.msisdn.contains(q) ||
-          item.idNumber.toLowerCase().contains(q);
-      return matchesText && matchesDate(item);
-    }).toList();
+    final results = await Future.wait(futures);
+    for (final list in results) {
+      allItems.addAll(list);
+    }
 
-    final start = offset;
-    if (start >= filtered.length) return <HistoryItem>[];
+    // 2. Filtrage local (Query)
+    var filteredItems = allItems;
 
-    final end = (start + limit).clamp(0, filtered.length);
-    return filtered.sublist(start, end);
+    if (query.isNotEmpty) {
+      final q = query.toLowerCase();
+      filteredItems = filteredItems
+          .where((item) =>
+              item.msisdn.contains(q) ||
+              item.clientName.toLowerCase().contains(q))
+          .toList();
+    }
+
+    // 3. Filtrage par Date (DateRange)
+    if (dateRange != null) {
+      // On gère les deux types (Flutter DateTimeRange et notre custom DateTimeRangeFilter)
+      // On utilise 'dynamic' pour accéder aux propriétés start/end sans erreur de cast immédiate
+      final start = (dateRange as dynamic).start as DateTime;
+      final end = (dateRange as dynamic).end as DateTime;
+
+      filteredItems = filteredItems.where((item) {
+        return item.operationDate.isAfter(start.subtract(const Duration(days: 1))) &&
+               item.operationDate.isBefore(end.add(const Duration(days: 1)));
+      }).toList();
+    }
+
+    // 4. Tri global par date (du plus récent au plus ancien)
+    filteredItems.sort((a, b) => b.operationDate.compareTo(a.operationDate));
+
+    // 5. Pagination locale
+    if (offset >= filteredItems.length) return [];
+    final end = (offset + limit < filteredItems.length)
+        ? offset + limit
+        : filteredItems.length;
+
+    return filteredItems.sublist(offset, end);
+  }
+  @override
+  Future<List<HistoryItem>> getAllHistory() async {
+    final futures = <Future<List<HistoryItem>>>[
+      _dataSource.getActivations(),
+      _dataSource.getReactivations(),
+      _dataSource.getUpdates(),
+    ];
+
+    final results = await Future.wait(futures);
+    List<HistoryItem> allItems = [];
+    for (final list in results) {
+      allItems.addAll(list);
+    }
+    // Tri par défaut (plus récent d'abord)
+    allItems.sort((a, b) => b.operationDate.compareTo(a.operationDate));
+    return allItems;
   }
 }
 
-class DateTimeRangeFilter {
-  final DateTime start;
-  final DateTime end;
 
-  DateTimeRangeFilter({required this.start, required this.end});
-}

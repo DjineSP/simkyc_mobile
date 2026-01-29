@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../../../../../core/services/operation_validator.dart';
 
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
+import '../../data/repositories/sim_update_repository.dart';
 import 'widgets/step_search_update.dart';
 import 'widgets/step_edit_client.dart';
 import 'widgets/step_update_summary.dart';
@@ -57,6 +59,40 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
   final Map<String, String?> _errors = {};
   File? _frontImg;
   File? _backImg;
+
+  List<int>? _tryDecodeBytes(dynamic raw) {
+    if (raw == null) return null;
+
+    if (raw is List<int>) return raw;
+    if (raw is List) {
+      try {
+        return raw.map((e) => e as int).toList();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    if (raw is String) {
+      final s = raw.trim();
+      if (s.isEmpty) return null;
+
+      final base64Part = s.contains(',') ? s.split(',').last.trim() : s;
+      try {
+        return base64Decode(base64Part);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  Future<File?> _writeTempImage(List<int> bytes, {required String prefix}) async {
+    final dir = Directory.systemTemp;
+    final file = File('${dir.path}${Platform.pathSeparator}${prefix}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
 
   @override
   void dispose() {
@@ -194,21 +230,47 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     );
 
     try {
-      await Future.delayed(const Duration(milliseconds: 1200));
+      final repo = ref.read(simUpdateRepositoryProvider);
+      final data = await repo.fetchActivationByPhone(phone.replaceAll(' ', ''));
+
+      if (!mounted) return;
+
+      final frontRaw = data['idFront'] ?? data['idFrontImage'] ?? data['photoRecto'] ?? data['recto'] ?? data['front'];
+      final backRaw = data['idBack'] ?? data['idBackImage'] ?? data['photoVerso'] ?? data['verso'] ?? data['back'];
+
+      final frontBytes = _tryDecodeBytes(frontRaw);
+      final backBytes = _tryDecodeBytes(backRaw);
+
+      final frontFile = frontBytes == null ? null : await _writeTempImage(frontBytes, prefix: 'id_front');
+      final backFile = backBytes == null ? null : await _writeTempImage(backBytes, prefix: 'id_back');
 
       if (!mounted) return;
 
       setState(() {
-        _ctrls['firstName']!.text = "Jean Paul";
-        _ctrls['lastName']!.text = "KAMDEM";
-        _ctrls['dob']!.text = "15/03/1990";
-        _ctrls['pob']!.text = "Conakry";
-        _ctrls['gender']!.text = "Homme";
-        _ctrls['job']!.text = "Ingénieur";
-        _ctrls['geo']!.text = "Kaloum, Conakry";
-        _ctrls['idNature']!.text = "CNI";
-        _ctrls['idNumber']!.text = "123456789";
-        _ctrls['idValidity']!.text = "20/12/2028";
+        _ctrls['firstName']!.text = (data['prenom'] ?? data['firstName'] ?? '').toString();
+        _ctrls['lastName']!.text = (data['nom'] ?? data['lastName'] ?? '').toString();
+        _ctrls['dob']!.text = (data['dateNaissance'] ?? data['dob'] ?? '').toString();
+        _ctrls['pob']!.text = (data['lieuNaissance'] ?? data['pob'] ?? '').toString();
+        final gender = data['sexe'] ?? data['gender'];
+        if (gender is bool) {
+          _ctrls['gender']!.text = gender ? 'Homme' : 'Femme';
+        } else {
+          _ctrls['gender']!.text = (gender ?? 'Homme').toString();
+        }
+        _ctrls['job']!.text = (data['profession'] ?? data['job'] ?? '').toString();
+        _ctrls['geo']!.text = (data['adresseGeo'] ?? data['geo'] ?? '').toString();
+        _ctrls['post']!.text = (data['adressePostale'] ?? data['post'] ?? '').toString();
+        _ctrls['email']!.text = (data['mail'] ?? data['email'] ?? '').toString();
+        _ctrls['idNature']!.text = (data['idNaturePiece'] ?? data['idNature'] ?? '').toString();
+        _ctrls['idNumber']!.text = (data['numeroPiece'] ?? data['idNumber'] ?? '').toString();
+        _ctrls['idValidity']!.text = (data['dateValiditePiece'] ?? data['idValidity'] ?? '').toString();
+
+        if (frontFile != null) {
+          _frontImg = frontFile;
+        }
+        if (backFile != null) {
+          _backImg = backFile;
+        }
       });
 
       // Ferme le loader d'abord
@@ -344,23 +406,58 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
       ),
     );
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final front = _frontImg;
+      final back = _backImg;
+      if (front == null || back == null) {
+        throw Exception(l10n.sim_error_photo_front);
+      }
 
-    if (!mounted) return;
+      final repo = ref.read(simUpdateRepositoryProvider);
 
-    Navigator.of(context, rootNavigator: true).pop(); // ferme loader
+      final fields = <String, dynamic>{
+        'msisdn': _ctrls['msisdnSearch']!.text.trim(),
+        'nom': _ctrls['lastName']!.text.trim(),
+        'prenom': _ctrls['firstName']!.text.trim(),
+        'sexe': _ctrls['gender']!.text == 'Homme' || _ctrls['gender']!.text == 'Male',
+        'dateNaissance': _ctrls['dob']!.text.trim(),
+        'lieuNaissance': _ctrls['pob']!.text.trim(),
+        'profession': _ctrls['job']!.text.trim().isEmpty ? null : _ctrls['job']!.text.trim(),
+        'dateValiditePiece': _ctrls['idValidity']!.text.trim(),
+        'numeroPiece': _ctrls['idNumber']!.text.trim(),
+        'adressePostale': _ctrls['post']!.text.trim().isEmpty ? null : _ctrls['post']!.text.trim(),
+        'telephone': _ctrls['msisdnSearch']!.text.trim(),
+        'mail': _ctrls['email']!.text.trim().isEmpty ? null : _ctrls['email']!.text.trim(),
+        'adresseGeo': _ctrls['geo']!.text.trim(),
+        'idNaturePiece': int.tryParse(_ctrls['idNature']!.text.trim()) ?? 0,
+      };
 
-    setState(() => _isLoading = false);
+      final resp = await repo.updateClient(fields: fields, idFront: front, idBack: back);
 
-    await showAppMessageDialog(
-      context,
-      title: l10n.sim_update_success_title,
-      message: l10n.sim_update_success_body,
-      type: AppMessageType.success,
-      autoDismiss: const Duration(seconds: 2),
-    );
+      if (!mounted) return;
 
-    if (mounted) Navigator.pop(context);
+      Navigator.of(context, rootNavigator: true).pop(); // ferme loader
+      setState(() => _isLoading = false);
+
+      await showAppMessageDialog(
+        context,
+        title: l10n.sim_update_success_title,
+        message: (resp['message']?.toString().isNotEmpty == true) ? resp['message'].toString() : l10n.sim_update_success_body,
+        type: AppMessageType.success,
+        autoDismiss: const Duration(seconds: 2),
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      setState(() => _isLoading = false);
+      await showAppMessageDialog(
+        context,
+        title: l10n.sim_update_error_title,
+        message: e.toString(),
+        type: AppMessageType.error,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------

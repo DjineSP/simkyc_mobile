@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
 import 'dart:io';
+import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/services/operation_validator.dart';
+import '../../data/repositories/sim_activation_repository.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
 
@@ -132,18 +134,31 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
   }
 
   Future<bool> _fetchSimDataManually() async {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primary))
     );
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
+    try {
+      final repo = ref.read(simActivationRepositoryProvider);
+      final serial = _ctrls['serial']!.text.trim();
+      final fetchedMsisdn = await repo.fetchMsisdnFromSerial(serial);
+      if (!mounted) return false;
       Navigator.pop(context);
-      setState(() => _ctrls['msisdn']!.text = "690000000");
+      setState(() => _ctrls['msisdn']!.text = fetchedMsisdn);
       return true;
+    } catch (e) {
+      if (!mounted) return false;
+      Navigator.pop(context);
+      await showAppMessageDialog(
+        context,
+        title: l10n.common_error_title,
+        message: e.toString(),
+        type: AppMessageType.error,
+      );
+      return false;
     }
-    return false;
   }
 
   void _submitFinal() async {
@@ -156,19 +171,53 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
     );
     if (!ok) return;
 
-    setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
+    final idFront = _frontImg;
+    final idBack = _backImg;
+    if (idFront == null || idBack == null) return;
 
-    await showAppMessageDialog(
-      context,
-      title: l10n.sim_msg_success_title,
-      message: l10n.sim_msg_success_body,
-      type: AppMessageType.success,
-      autoDismiss: const Duration(seconds: 2),
-    );
-    Navigator.pop(context);
+    setState(() => _isSubmitting = true);
+    try {
+      final repo = ref.read(simActivationRepositoryProvider);
+
+      final fields = <String, dynamic>{
+        'noms': _ctrls['lastName']!.text.trim(),
+        'prenoms': _ctrls['firstName']!.text.trim(),
+        'sexe': _isMale,
+        'dateNaissance': DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(_ctrls['dob']!.text.trim())),
+        'lieuNaissance': _ctrls['pob']!.text.trim(),
+        'profession': _ctrls['job']!.text.trim(),
+        'dateValiditePiece': DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(_ctrls['idValidity']!.text.trim())),
+        'numeroPiece': _ctrls['idNumber']!.text.trim(),
+        'adressePostale': _ctrls['post']!.text.trim(),
+        'numeroTelephoneClient': _ctrls['msisdn']!.text.trim(),
+        'mail': _ctrls['email']!.text.trim(),
+        'adresseGeographique': _ctrls['geo']!.text.trim(),
+        'msisdn': _ctrls['serial']!.text.trim(),
+        'idNaturePiece': int.tryParse(_ctrls['idNature']!.text.trim()) ?? 0,
+      };
+
+      final resp = await repo.activateSim(fields: fields, idFront: idFront, idBack: idBack);
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      await showAppMessageDialog(
+        context,
+        title: l10n.sim_msg_success_title,
+        message: (resp['message']?.toString().isNotEmpty == true) ? resp['message'].toString() : l10n.sim_msg_success_body,
+        type: AppMessageType.success,
+        autoDismiss: const Duration(seconds: 2),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      await showAppMessageDialog(
+        context,
+        title: l10n.common_error_title,
+        message: e.toString(),
+        type: AppMessageType.error,
+      );
+    }
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../services/storage_service.dart';
 
@@ -13,7 +14,7 @@ class ApiClient {
   ApiClient._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'https://api.sharepay.com/v1',
+        baseUrl: dotenv.env['BACKEND_BASE_URL'] ?? 'https://api.oufarez.com/v1',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {'Content-Type': 'application/json'},
@@ -23,6 +24,11 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+
+          if (options.extra['requiresAuth'] == false) {
+            return handler.next(options); 
+          }
+
           final token = await StorageService.instance.secureRead(_kUserTokenKey);
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';

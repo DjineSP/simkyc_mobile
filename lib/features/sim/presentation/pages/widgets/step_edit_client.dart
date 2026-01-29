@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
 import 'dart:io';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../data/repositories/sim_activation_repository.dart';
 import '../components/activation_helpers.dart';
 
 
-class StepEditClient extends StatelessWidget {
+class StepEditClient extends ConsumerWidget {
   final Map<String, TextEditingController> ctrls;
   final Map<String, FocusNode> nodes;
   final Map<String, String?> errors;
@@ -24,9 +26,12 @@ class StepEditClient extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final idNaturesAsync = ref.watch(idNaturesProvider);
+
+    final selectedValue = (ctrls['idNature']?.text.isEmpty ?? true) ? null : ctrls['idNature']!.text;
 
     return ValueListenableBuilder(
       valueListenable: ctrls['gender']!,
@@ -90,16 +95,69 @@ class StepEditClient extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   LabelText(l10n.step_edit_nature_label),
-                  DropdownButtonFormField<String>(
-                    value: ctrls['idNature']?.text.isEmpty ?? true ? null : ctrls['idNature']!.text,
-                    decoration: inputDec(context: context, hint: l10n.step_edit_id_hint, error: errors['idNature']),
-                    dropdownColor: theme.colorScheme.surface,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
-                    items: ['CNI', 'Passeport', 'Carte de séjour', 'Récépissé'].map((v) => DropdownMenuItem(
-                      value: v,
-                      child: Text(v),
-                    )).toList(),
-                    onChanged: (val) { if (val != null) ctrls['idNature']?.text = val; },
+                  idNaturesAsync.when(
+                    data: (items) {
+                      final dropdownItems = items.map<DropdownMenuItem<String>>((e) {
+                        final id = e['id'] ?? e['value'] ?? e['code'];
+                        final label = e['libelle'] ?? e['label'] ?? e['name'] ?? id?.toString() ?? '';
+                        return DropdownMenuItem<String>(
+                          value: id?.toString(),
+                          child: Text(label.toString()), // Dans la liste ouverte, le texte peut rester normal
+                        );
+                      }).toList();
+
+                      return DropdownButtonFormField<String>(
+                        value: selectedValue,
+                        isExpanded: true, // 1. Obligatoire pour permettre au texte de se tronquer
+                        
+                        // 2. Personnalise l'affichage du texte une fois sélectionné
+                        selectedItemBuilder: (BuildContext context) {
+                          return items.map<Widget>((e) {
+                            final label = e['libelle'] ?? e['label'] ?? e['name'] ?? '';
+                            return Text(
+                              label.toString(),
+                              maxLines: 1, // Force une ligne
+                              overflow: TextOverflow.ellipsis, // Ajoute "..." si trop long
+                              softWrap: false,
+                            );
+                          }).toList();
+                        },
+
+                        decoration: inputDec(
+                          context: context, 
+                          hint: l10n.step_edit_id_hint, 
+                          error: errors['idNature'],
+                        ),
+                        dropdownColor: theme.colorScheme.surface,
+                        style: TextStyle(
+                          fontSize: 14, 
+                          fontWeight: FontWeight.w600, 
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        items: dropdownItems,
+                        onChanged: (val) {
+                          if (val != null) ctrls['idNature']?.text = val;
+                        },
+                      );
+                    },
+                    loading: () => Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: LinearProgressIndicator(
+                        color: AppColors.primary,
+                        backgroundColor: theme.dividerColor.withOpacity(0.2),
+                      ),
+                    ),
+                    error: (e, _) => Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Text(
+                        e.toString(),
+                        style: TextStyle(
+                          color: theme.colorScheme.error,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _buildField(context, l10n.step_edit_id_number_label, 'idNumber', hint: l10n.step_edit_id_number_hint),

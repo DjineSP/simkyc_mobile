@@ -6,6 +6,7 @@ import '../../../../../core/services/operation_validator.dart';
 
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
+import '../../data/repositories/sim_reactivation_repository.dart';
 import 'widgets/step_search_sim.dart';
 import 'widgets/step_check_client.dart';
 import 'widgets/step_new_sim_details.dart';
@@ -93,27 +94,27 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
     );
 
     try {
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      if (phone.endsWith("000")) throw Exception("Introuvable");
+      final repo = ref.read(simReactivationRepositoryProvider);
+      final data = await repo.fetchActivationByPhone(phone);
 
       setState(() {
         _clientData = {
-          'msisdn': phone,
-          'serial': '8922410123456789012',
-          'status': 'Suspendue (Perte)',
-          'nom': 'DJINE',
-          'prenom': 'SINTO PAFING',
-          'dob': '22/05/2005',
-          'pob': 'Conakry',
-          'gender': 'Homme',
-          'job': 'Etudiant',
-          'geo': 'Kipé, Rue KI-142, Conakry',
-          'post': 'BP 1024 Conakry',
-          'email': 'djine.pafing@gmail.com',
-          'idNature': 'CIN',
-          'idNumber': 'GN-12345678-22',
-          'idValidity': '14/11/2028',
+          ...data,
+          'msisdn': (data['msisdn'] ?? data['telephone'] ?? phone)?.toString(),
+          'serial': (data['serial'] ?? data['iccid'] ?? data['simSerial'] ?? data['serialSearch'])?.toString(),
+          'status': (data['status'] ?? data['etat'] ?? data['state'])?.toString(),
+          'nom': (data['nom'] ?? data['lastName'])?.toString(),
+          'prenom': (data['prenom'] ?? data['firstName'])?.toString(),
+          'dob': (data['dob'] ?? data['dateNaissance'])?.toString(),
+          'pob': (data['pob'] ?? data['lieuNaissance'])?.toString(),
+          'gender': (data['gender'] ?? data['sexe'])?.toString(),
+          'job': (data['job'] ?? data['profession'])?.toString(),
+          'geo': (data['geo'] ?? data['adresseGeo'])?.toString(),
+          'post': (data['post'] ?? data['adressePostale'])?.toString(),
+          'email': (data['email'] ?? data['mail'])?.toString(),
+          'idNature': (data['idNature'] ?? data['naturePiece'] ?? data['piece'] ?? data['idNaturePiece'])?.toString(),
+          'idNumber': (data['idNumber'] ?? data['numeroPiece'])?.toString(),
+          'idValidity': (data['idValidity'] ?? data['dateValiditePiece'])?.toString(),
         };
         _ctrls['msisdn']?.text = _clientData?['msisdn'] ?? "";
       });
@@ -243,20 +244,34 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
         builder: (_) => Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
     );
 
-    // Simulation de traitement
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final repo = ref.read(simReactivationRepositoryProvider);
+      final resp = await repo.reactivateSim(
+        newMsisdn: _ctrls['newSerial']!.text.trim(),
+        contactOne: _ctrls['frequent1']!.text.trim(),
+        contactTwo: _ctrls['frequent2']!.text.trim().isEmpty ? null : _ctrls['frequent2']!.text.trim(),
+        contactThree: _ctrls['frequent3']!.text.trim().isEmpty ? null : _ctrls['frequent3']!.text.trim(),
+      );
 
-    if (mounted) Navigator.of(context, rootNavigator: true).pop(); // Ferme le loader
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
-    // Affichage du message de succès avant de quitter
-    await showAppMessageDialog(
+      await showAppMessageDialog(
         context,
         title: l10n.sim_react_success_title,
-        message: l10n.sim_react_success_body,
+        message: (resp['message']?.toString().isNotEmpty == true) ? resp['message'].toString() : l10n.sim_react_success_body,
         type: AppMessageType.success,
         autoDismiss: const Duration(seconds: 2),
-    );
-    Navigator.pop(context);
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      await showAppMessageDialog(
+        context,
+        title: l10n.sim_react_error_title,
+        message: e.toString(),
+        type: AppMessageType.error,
+      );
+    }
   }
 
   void _showError(String msg) {

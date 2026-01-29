@@ -7,6 +7,7 @@ import '../services/storage_service.dart';
 class AuthNotifier extends AsyncNotifier<UserModel> {
   static const _kUserLoginKey = 'user_login';
   static const _kUserTokenKey = 'user_token';
+  static const _kUserPasswordKey = 'user_password';
   static const _kRememberMeKey = 'remember_me';
 
   @override
@@ -32,6 +33,12 @@ class AuthNotifier extends AsyncNotifier<UserModel> {
       if (user.token != null && user.token!.isNotEmpty) {
         await StorageService.instance.secureWrite(_kUserTokenKey, user.token!);
       }
+
+      if (rememberMe) {
+        await StorageService.instance.secureWrite(_kUserPasswordKey, password);
+      } else {
+        await StorageService.instance.secureRemove(_kUserPasswordKey);
+      }
       return user;
     });
   }
@@ -41,6 +48,7 @@ class AuthNotifier extends AsyncNotifier<UserModel> {
   Future<void> logout() async {
     final currentLogin = state.asData?.value.login ?? '';
     await StorageService.instance.secureRemove(_kUserTokenKey);
+    await StorageService.instance.secureRemove(_kUserPasswordKey);
     await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
     state = AsyncValue.data(
       UserModel(

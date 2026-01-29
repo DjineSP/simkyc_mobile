@@ -71,7 +71,7 @@ class StepValidation extends StatelessWidget {
               _infoRow(
                 theme,
                 l10n.check_label_name,
-                '${ctrls['firstName']?.text ?? ''} ${ctrls['lastName']?.text ?? ''}'.trim(),
+                '${ctrls['lastName']?.text ?? ''} ${ctrls['firstName']?.text ?? ''}'.trim(),
               ),
               _infoRow(theme, l10n.check_label_dob, ctrls['dob']?.text),
               _infoRow(theme, l10n.check_label_pob, ctrls['pob']?.text),

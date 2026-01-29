@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../l10n/gen/app_localizations.dart';
+import '../../../data/repositories/sim_activation_repository.dart';
 import '../components/activation_helpers.dart';
 import '../components/sim_code_scanner.dart';
 
-class StepSimDetails extends StatelessWidget {
+class StepSimDetails extends ConsumerWidget {
   final TextEditingController msisdn;
   final TextEditingController serial;
   final FocusNode msisdnFocus;
@@ -23,15 +25,14 @@ class StepSimDetails extends StatelessWidget {
   });
 
   // --- LOGIQUE DU SCANNER ---
-  void _handleScan(BuildContext context) {
+  void _handleScan(BuildContext context, WidgetRef ref) {
     SimCodeScanner.show(
       context,
-      onCodeScanned: (code) => _fetchSimDataFromApi(context, code),
+      onCodeScanned: (code) => _fetchSimDataFromApi(context, ref, code),
     );
   }
 
-  // --- APPEL API (SIMULATION) ---
-  Future<void> _fetchSimDataFromApi(BuildContext context, String code) async {
+  Future<void> _fetchSimDataFromApi(BuildContext context, WidgetRef ref, String code) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -41,10 +42,11 @@ class StepSimDetails extends StatelessWidget {
     );
 
     try {
-      await Future.delayed(const Duration(milliseconds: 1200));
-
       serial.text = code;
-      msisdn.text = "690000000"; // Simulation retour API Cellcom
+
+      final repo = ref.read(simActivationRepositoryProvider);
+      final fetchedMsisdn = await repo.fetchMsisdnFromSerial(code);
+      msisdn.text = fetchedMsisdn;
 
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
@@ -57,7 +59,7 @@ class StepSimDetails extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
@@ -82,7 +84,7 @@ class StepSimDetails extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (value) {
-                  if (value.isNotEmpty) _fetchSimDataFromApi(context, value);
+                  if (value.isNotEmpty) _fetchSimDataFromApi(context, ref, value);
                 },
                 decoration: inputDec(
                   context: context,
@@ -90,7 +92,7 @@ class StepSimDetails extends StatelessWidget {
                   error: serialError,
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 24),
-                    onPressed: () => _handleScan(context),
+                    onPressed: () => _handleScan(context, ref),
                   ),
                 ),
               ),
