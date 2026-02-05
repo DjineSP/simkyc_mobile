@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/history_item.dart';
+import '../../domain/entities/history_detail.dart';
 import '../../domain/repositories/history_repository.dart';
 import '../datasources/history_remote_datasource.dart';
 
@@ -89,6 +90,18 @@ class HistoryRepositoryImpl implements HistoryRepository {
     // Tri par défaut (plus récent d'abord)
     allItems.sort((a, b) => b.operationDate.compareTo(a.operationDate));
     return allItems;
+  }
+
+  @override
+  Future<HistoryDetail?> getHistoryDetail(String id, HistoryActionType type) async {
+    switch (type) {
+      case HistoryActionType.activation:
+        return await _dataSource.getActivationDetail(id);
+      case HistoryActionType.reactivation:
+        return await _dataSource.getReactivationDetail(id);
+      case HistoryActionType.update:
+        return await _dataSource.getUpdateDetail(id);
+    }
   }
 }
 

@@ -2,11 +2,16 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/api/api_client.dart';
 import '../../domain/entities/history_item.dart';
+import '../../domain/entities/history_detail.dart';
 
 abstract class HistoryRemoteDataSource {
   Future<List<HistoryItem>> getActivations();
   Future<List<HistoryItem>> getReactivations();
   Future<List<HistoryItem>> getUpdates();
+  
+  Future<HistoryDetail?> getActivationDetail(String id);
+  Future<HistoryDetail?> getReactivationDetail(String id);
+  Future<HistoryDetail?> getUpdateDetail(String id);
 }
 
 class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
@@ -44,6 +49,43 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
     } catch (e) {
       debugPrint("Erreur Updates: $e");
       return [];
+    }
+  }
+
+  @override
+  Future<HistoryDetail?> getActivationDetail(String id) async {
+    debugPrint("Calling getActivationDetail with ID: $id");
+    try {
+      final response = await _dio.get('/api/Activation_Sim/$id');
+      debugPrint("Response Detail: ${response.data}");
+      return HistoryDetail.fromJson(response.data);
+    } catch (e) {
+      debugPrint("Erreur GetActivationDetail: $e");
+      return null;
+    }
+  }
+
+  @override
+  Future<HistoryDetail?> getReactivationDetail(String id) async {
+    debugPrint("Calling getReactivationDetail with ID: $id");
+    try {
+      final response = await _dio.get('/api/Reactivation_Sim/$id');
+      return HistoryDetail.fromJson(response.data);
+    } catch (e) {
+      debugPrint("Erreur GetReactivationDetail: $e");
+      return null;
+    }
+  }
+
+  @override
+  Future<HistoryDetail?> getUpdateDetail(String id) async {
+    debugPrint("Calling getUpdateDetail with ID: $id");
+    try {
+      final response = await _dio.get('/api/MiseAJour/$id');
+      return HistoryDetail.fromJson(response.data);
+    } catch (e) {
+      debugPrint("Erreur GetUpdateDetail: $e");
+      return null;
     }
   }
 

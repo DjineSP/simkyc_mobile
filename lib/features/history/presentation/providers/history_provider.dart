@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/history_repository.dart';
 import '../../domain/entities/history_item.dart';
+import '../../domain/entities/history_detail.dart';
 import '../../domain/repositories/history_repository.dart';
 
 // Cette classe semble être un filtre personnalisé, nous la conservons pour la compatibilité.
@@ -170,4 +171,9 @@ final historyRepositoryProvider = Provider<HistoryRepository>((ref) {
 
 final historyProvider = NotifierProvider<HistoryNotifier, HistoryState>(() {
   return HistoryNotifier();
+});
+
+final historyDetailProvider = FutureProvider.family<HistoryDetail?, ({String id, HistoryActionType type})>((ref, arg) async {
+  final repo = ref.read(historyRepositoryProvider);
+  return await repo.getHistoryDetail(arg.id, arg.type);
 });

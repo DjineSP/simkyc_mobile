@@ -8,6 +8,7 @@ import '../../../../l10n/gen/app_localizations.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../providers/history_provider.dart';
 import '../../domain/entities/history_item.dart';
+import 'history_detail_page.dart';
 
 class HistoryManagementPage extends ConsumerStatefulWidget {
   const HistoryManagementPage({super.key});
@@ -410,7 +411,12 @@ class _HistoryItemCard extends StatelessWidget {
                  // Bouton Détails
                  InkWell(
                    onTap: () {
-                      showAppMessageDialog(context, title: "Détails", message: "ID Transaction: ${item.id}\n${item.info}");
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (_) => HistoryDetailPage(itemId: item.id, type: item.type)
+                        )
+                      );
                    },
                    borderRadius: BorderRadius.circular(8),
                    child: Container(
