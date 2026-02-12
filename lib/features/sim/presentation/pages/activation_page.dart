@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/services/operation_validator.dart';
+import '../../../../../core/providers/auth_provider.dart';
 import '../../data/repositories/sim_activation_repository.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
@@ -199,6 +200,9 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
       final resp = await repo.activateSim(fields: fields, idFront: idFront, idBack: idBack);
       if (!mounted) return;
       setState(() => _isSubmitting = false);
+
+      // Met à jour les stats depuis le serveur
+      ref.read(authProvider.notifier).refreshUserStats();
 
       await showAppMessageDialog(
         context,

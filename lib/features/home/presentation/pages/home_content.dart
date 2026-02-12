@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/routing/app_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 import '../providers/home_provider.dart';
 
@@ -46,7 +47,12 @@ class HomeContent extends ConsumerWidget {
     ];
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(homeDashboardProvider.notifier).refresh(),
+      onRefresh: () async {
+        // Rafraichir les stats utilisateur depuis le serveur
+        await ref.read(authProvider.notifier).refreshUserStats();
+        // Rafraichir le dashboard si nécessaire (actuellement via riverpod ça se fait tout seul si auth change)
+        return ref.read(homeDashboardProvider.notifier).refresh();
+      },
       color: AppColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -96,20 +102,41 @@ class HomeContent extends ConsumerWidget {
               ),
 
               const SizedBox(height: 20),
-
-              // Barre de recherche adaptée au thème
-              _buildSearchBar(theme, l10n, isLoading),
-
-              const SizedBox(height: 20),
+              
+              // STATS KPIs
               Skeletonizer(
                 enabled: isLoading,
-                child: _KpiRow(
-                  totalActivations: isLoading
-                      ? '0000'
-                      : (data?.totalActivations.toString() ?? '0'),
-                  activeSims: isLoading
-                      ? '0000'
-                      : (data?.activeSims.toString() ?? '0'),
+                child: Column(
+                  children: [
+                    // Main KPI: Activations
+                    SizedBox(
+                      width: double.infinity,
+                      child: _KpiCard(
+                        title: l10n.home_action_activation, 
+                        value: isLoading ? '0000' : (data?.totalActivations.toString() ?? '0'), 
+                        color: Colors.blueAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Secondary KPIs
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _KpiCard(
+                            title: l10n.home_action_reactivation, 
+                            value: isLoading ? '0000' : (data?.totalReactivations.toString() ?? '0'), 
+                            color: Colors.orangeAccent,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: _KpiCard(
+                          title: l10n.home_action_update, 
+                          value: isLoading ? '0000': (data?.totalUpdates.toString() ?? '0'), 
+                          color: Colors.purpleAccent,
+                        )),
+                      ],
+                    ),
+                  ],
                 ),
               ),
 
@@ -156,65 +183,62 @@ class HomeContent extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _buildSearchBar(ThemeData theme, var l10n, bool isLoading) {
-    return TextField(
-      enabled: !isLoading,
-      decoration: InputDecoration(
-        hintText: l10n.home_search_hint,
-        prefixIcon: const Icon(Icons.search, size: 20),
-        filled: true,
-        fillColor: theme.colorScheme.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.dividerColor),
-        ),
-      ),
-    );
-  }
 }
 
 // Composants de support (KPI & Tiles)
-class _KpiRow extends StatelessWidget {
-  final String totalActivations;
-  final String activeSims;
-  const _KpiRow({required this.totalActivations, required this.activeSims});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: _KpiCard(title: 'Activations', value: totalActivations, icon: Icons.person_add)),
-        const SizedBox(width: 12),
-        Expanded(child: _KpiCard(title: 'SIM Actives', value: activeSims, icon: Icons.sim_card)),
-      ],
-    );
-  }
-}
-
 class _KpiCard extends StatelessWidget {
   final String title;
   final String value;
-  final IconData icon;
-  const _KpiCard({required this.title, required this.value, required this.icon});
+  final Color? color;
+
+  const _KpiCard({
+    required this.title, 
+    required this.value, 
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final primaryColor = color ?? theme.colorScheme.primary;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-          Text(title, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5))),
+          Text(
+            value, 
+            style: TextStyle(
+              fontSize: 32, 
+              fontWeight: FontWeight.w900,
+              color: primaryColor,
+              height: 1.0,
+            )
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title, 
+            style: TextStyle(
+              fontSize: 13, 
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w600
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

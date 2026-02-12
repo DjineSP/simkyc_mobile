@@ -44,8 +44,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       }
 
       if (user.isAuthenticated && ref.read(authProvider.notifier).getRememberMe()) {
-        // context.go(Routes.home);
-        context.go(Routes.login);
+        context.go(Routes.home);
         return;
       }
 

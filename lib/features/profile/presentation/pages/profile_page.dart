@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
-import 'package:skeletonizer/skeletonizer.dart';
+
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/providers/app_settings_provider.dart';
@@ -10,7 +10,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../app/routing/app_router.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
-import '../providers/profile_provider.dart';
+
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -80,32 +80,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(authProvider).asData?.value;
+    final userData = user?.userData;
     final settings = ref.watch(appSettingsProvider);
     final biometricEnabled = ref.watch(biometricEnabledProvider);
-    final profileState = ref.watch(profileProvider);
-    final profile = profileState.data;
-    final isLoading = profileState.isLoading;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => ref.read(profileProvider.notifier).refresh(),
+          onRefresh: () async {
+             // Replaces the undefined method call with a valid refresh call
+             await ref.refresh(authProvider.future);
+          },
           color: AppColors.primary,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               // CARTE AGENT
-              Skeletonizer(
-                enabled: isLoading,
-                child: _buildUserCard(
-                  theme,
-                  l10n,
-                  user?.login ?? '',
-                  fullName: profile?.fullName ?? '',
-                  agentId: profile?.agentId ?? '',
-                  roleLabel: profile?.roleLabel ?? '',
-                ),
+              _buildUserCard(
+                theme,
+                l10n,
+                '', // unused phone/login param
+                fullName: userData?.username ?? 'Utilisateur',
+                agentId: (userData?.idUser ?? 0).toString(),
+                roleLabel: 'Agent', 
               ),
               const SizedBox(height: 24),
 

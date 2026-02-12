@@ -41,23 +41,11 @@ class AuthRepository {
         throw Exception('Réponse backend invalide');
       }
 
-      final bool isOk = data['succes'] == true; 
-      final String? message = data['message']?.toString();
-      final String? token = data['token']?.toString();
-
-      if (!isOk) {
-        throw Exception(message ?? 'Connexion échouée');
+      if (data['success'] != true) {
+        throw Exception(data['message']?.toString() ?? 'Connexion échouée');
       }
 
-      if (token == null || token.isEmpty) {
-        throw Exception('Erreur : Token non reçu du serveur');
-      }
-
-      return {
-        'login': login,
-        'token': token,
-        'message': message,
-      };
+      return data;
 
     } on DioException catch (e) {
       final responseData = e.response?.data;
@@ -71,10 +59,63 @@ class AuthRepository {
     }
   }
 
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await ApiClient.instance.dio.post(
+        '/api/Login/refresh',
+        options: Options(
+          extra: {'requiresAuth': false}, 
+        ),
+        data: {
+          'refreshToken': refreshToken,
+        },
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic> || data['success'] != true) {
+         throw Exception('Echec du rafraichissement du token');
+      }
+      return data;
+      
+    } catch (e) {
+      throw Exception('Session expirée');
+    }
+  }
+
   Future<bool> verifyPassword(String login, String password) async {
     final savedPassword = await StorageService.instance.secureRead('user_password');
     if (savedPassword == null || savedPassword.isEmpty) return false;
     return savedPassword == password;
+  }
+  Future<Map<String, dynamic>> fetchUserStats() async {
+    try {
+      final response = await ApiClient.instance.dio.get('/api/Login/statistique');
+      /*
+      API Response format:
+      {
+        "nombre_Activation": 10,
+        "nombre_Reactivation": 5,
+        "nombre_Mise_A_Jour": 2
+      }
+      */
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(e.message ?? 'Erreur lors de la récupération des statistiques');
+    }
+  }
+  Future<void> logout(String refreshToken) async {
+    try {
+      await ApiClient.instance.dio.post(
+        '/api/Login/logout',
+        data: {'refreshToken': refreshToken},
+        options: Options(
+          extra: {'requiresAuth': true}, 
+        ),
+      );
+    } catch (_) {
+      // On ignore les erreurs de déconnexion (token déjà invalide, réseau, etc.)
+      // Le but est surtout de clear le local storage après.
+    }
   }
 }
 

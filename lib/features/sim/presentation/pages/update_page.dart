@@ -8,6 +8,7 @@ import 'package:image_cropper/image_cropper.dart';
 import '../../../../../l10n/gen/app_localizations.dart';
 
 import '../../../../../core/services/operation_validator.dart';
+import '../../../../../core/providers/auth_provider.dart';
 
 
 import '../../../../shared/widgets/app_message_dialog.dart';
@@ -438,6 +439,9 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
 
       Navigator.of(context, rootNavigator: true).pop(); // ferme loader
       setState(() => _isLoading = false);
+
+      // Met à jour les stats depuis le serveur
+      ref.read(authProvider.notifier).refreshUserStats();
 
       await showAppMessageDialog(
         context,

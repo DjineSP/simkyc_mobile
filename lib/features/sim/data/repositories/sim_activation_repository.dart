@@ -169,5 +169,7 @@ final simActivationRepositoryProvider = Provider<SimActivationRepository>((ref) 
 
 final idNaturesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.read(simActivationRepositoryProvider);
+  // Cache the data for the session
+  ref.keepAlive();
   return repo.fetchIdNatures();
 });
