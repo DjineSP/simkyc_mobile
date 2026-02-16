@@ -21,9 +21,6 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
 
-  HistoryActionType? _selectedFilter;
-  DateTimeRange? _selectedDateRange;
-
   @override
   void initState() {
     super.initState();
@@ -158,22 +155,27 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
     );
   }
 
-  Widget _buildDateSelector(ThemeData theme, var l10n) {
+  Widget _buildDateSelector(ThemeData theme, AppLocalizations l10n) {
     final isDark = theme.brightness == Brightness.dark;
+    final historyState = ref.watch(historyProvider);
+    final dateRange = historyState.dateRange;
+
     return InkWell(
       onTap: () async {
         final picked = await showDateRangePicker(
           context: context,
-          firstDate: DateTime(2023),
+          firstDate: DateTime.now().subtract(const Duration(days: 30)),
           lastDate: DateTime.now(),
+          initialDateRange: dateRange != null 
+            ? DateTimeRange(start: dateRange.start, end: dateRange.end) 
+            : null,
           builder: (context, child) => Theme(
             data: theme.copyWith(colorScheme: theme.colorScheme.copyWith(primary: AppColors.primary)),
             child: child!,
           ),
         );
         if (picked != null) {
-          setState(() => _selectedDateRange = picked);
-          await ref.read(historyProvider.notifier).setDateRange(picked);
+          ref.read(historyProvider.notifier).setDateRange(picked);
         }
       },
       child: Container(
@@ -189,22 +191,18 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                _selectedDateRange == null
-                    ? l10n.history_date_all
-                    : l10n.history_date_range(
-                  DateFormat('dd/MM/yy').format(_selectedDateRange!.start),
-                  DateFormat('dd/MM/yy').format(_selectedDateRange!.end),
-                ),
+                _getDateLabel(dateRange, l10n),
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface),
               ),
             ),
-            if (_selectedDateRange != null)
+            if (dateRange != null)
               GestureDetector(
-                onTap: () async {
-                  setState(() => _selectedDateRange = null);
-                  await ref.read(historyProvider.notifier).setDateRange(null);
+                onTap: () {
+                   // Optional: Allow clearing to reset to default 30 days?
+                   // Provider handles null by resetting to default.
+                   ref.read(historyProvider.notifier).setDateRange(null);
                 },
-                child: const Icon(Icons.close, size: 18, color: AppColors.primary),
+                child: const Icon(Icons.refresh, size: 18, color: AppColors.primary), // Changed icon to refresh/reset hint
               ),
           ],
         ),
@@ -213,6 +211,9 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
   }
 
   Widget _buildFilterChips(AppLocalizations l10n) {
+    final historyState = ref.watch(historyProvider);
+    final selectedFilter = historyState.filterType;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -220,22 +221,33 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: _FilterChipCustom(
-              label: "Tous",
-              isSelected: _selectedFilter == null,
+              label: l10n.history_filter_all,
+              isSelected: selectedFilter == null,
               onSelected: (s) {
-                setState(() => _selectedFilter = null);
                 ref.read(historyProvider.notifier).setFilterType(null);
               },
             ),
           ),
           ...HistoryActionType.values.map((type) {
+            String label;
+            switch (type) {
+              case HistoryActionType.activation:
+                label = l10n.history_filter_activation;
+                break;
+              case HistoryActionType.reactivation:
+                label = l10n.history_filter_reactivation;
+                break;
+              case HistoryActionType.update:
+                label = l10n.history_filter_update;
+                break;
+            }
+
             return Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: _FilterChipCustom(
-                label: type.label,
-                isSelected: _selectedFilter == type,
+                label: label,
+                isSelected: selectedFilter == type,
                 onSelected: (s) {
-                  setState(() => _selectedFilter = s ? type : null);
                   ref.read(historyProvider.notifier).setFilterType(s ? type : null);
                 },
               ),
@@ -256,6 +268,28 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
           Text(l10n.history_empty, style: const TextStyle(color: AppColors.muted, fontSize: 16)),
         ],
       ),
+    );
+  }
+
+  String _getDateLabel(dynamic dateRange, AppLocalizations l10n) {
+    if (dateRange == null) return l10n.history_date_all;
+    
+    // Check for default 30 days
+    final now = DateTime.now();
+    // dateRange is DateTimeRangeFilter from HistoryState.
+    final start = dateRange.start as DateTime;
+    final end = dateRange.end as DateTime;
+
+    final isDefaultEnd = _isSameDay(end, now);
+    final days = end.difference(start).inDays;
+
+    if (isDefaultEnd && days == 30) {
+      return l10n.reports_period_30d;
+    }
+
+    return l10n.history_date_range(
+      DateFormat('dd/MM/yy').format(start),
+      DateFormat('dd/MM/yy').format(end),
     );
   }
 }
@@ -409,12 +443,12 @@ class _HistoryItemCard extends StatelessWidget {
                  _StatusBadge(status: item.status),
 
                  // Bouton Détails
-                 InkWell(
+                   InkWell(
                    onTap: () {
                       Navigator.push(
                         context, 
                         MaterialPageRoute(
-                          builder: (_) => HistoryDetailPage(itemId: item.id, type: item.type)
+                          builder: (_) => HistoryDetailPage(item: item)
                         )
                       );
                    },
@@ -458,6 +492,21 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    String label;
+    switch (status) {
+      case HistoryStatus.active:
+        label = l10n.history_status_active;
+        break;
+      case HistoryStatus.suspended:
+        label = l10n.history_status_suspended;
+        break;
+      case HistoryStatus.pending:
+      default:
+        label = l10n.history_status_pending;
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -466,7 +515,7 @@ class _StatusBadge extends StatelessWidget {
         border: Border.all(color: status.color.withOpacity(0.2)),
       ),
       child: Text(
-        status.label,
+        label,
         style: TextStyle(
           color: status.color,
           fontSize: 11,

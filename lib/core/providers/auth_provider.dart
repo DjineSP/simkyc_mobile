@@ -148,6 +148,13 @@ class AuthNotifier extends AsyncNotifier<UserModel> {
       print('Error refreshing stats: $e');
     }
   }
+  Future<void> updatePassword(String newPassword) async {
+    final repo = ref.read(authRepositoryProvider);
+    await repo.updatePassword(newPassword);
+    
+    // Update local password storage for future verification or re-login
+    await StorageService.instance.secureWrite(_kUserPasswordKey, newPassword);
+  }
 }
 
 final authProvider = AsyncNotifierProvider<AuthNotifier, UserModel>(AuthNotifier.new);

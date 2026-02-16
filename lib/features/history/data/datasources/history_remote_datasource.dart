@@ -1,141 +1,117 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/api/api_client.dart';
 import '../../domain/entities/history_item.dart';
 import '../../domain/entities/history_detail.dart';
 
 abstract class HistoryRemoteDataSource {
-  Future<List<HistoryItem>> getActivations();
-  Future<List<HistoryItem>> getReactivations();
-  Future<List<HistoryItem>> getUpdates();
-  
-  Future<HistoryDetail?> getActivationDetail(String id);
-  Future<HistoryDetail?> getReactivationDetail(String id);
-  Future<HistoryDetail?> getUpdateDetail(String id);
+  Future<List<HistoryItem>> getHistory({required DateTime startDate, required DateTime endDate});
 }
 
 class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
   final Dio _dio = ApiClient.instance.dio;
 
   @override
-  Future<List<HistoryItem>> getActivations() async {
+  Future<List<HistoryItem>> getHistory({required DateTime startDate, required DateTime endDate}) async {
     try {
-      // Endpoint déduit. À confirmer avec le backend.
-      final response = await _dio.get('/api/Activation_Sim/all'); 
-      return _parseList(response.data, HistoryActionType.activation);
-    } catch (e) {
-      // En cas d'erreur ou 404, on retourne une liste vide pour ne pas bloquer les autres flux
-      debugPrint("Erreur Activations: $e");
-      return [];
-    }
-  }
-
-  @override
-  Future<List<HistoryItem>> getReactivations() async {
-    try {
-      final response = await _dio.get('/api/Reactivation_Sim/all');
-      return _parseList(response.data, HistoryActionType.reactivation);
-    } catch (e) {
-      debugPrint("Erreur Reactivations: $e");
-      return [];
-    }
-  }
-
-  @override
-  Future<List<HistoryItem>> getUpdates() async {
-    try {
-      final response = await _dio.get('/api/MiseAJour/all');
-      return _parseList(response.data, HistoryActionType.update);
-    } catch (e) {
-      debugPrint("Erreur Updates: $e");
-      return [];
-    }
-  }
-
-  @override
-  Future<HistoryDetail?> getActivationDetail(String id) async {
-    debugPrint("Calling getActivationDetail with ID: $id");
-    try {
-      final response = await _dio.get('/api/Activation_Sim/$id');
-      debugPrint("Response Detail: ${response.data}");
-      return HistoryDetail.fromJson(response.data);
-    } catch (e) {
-      debugPrint("Erreur GetActivationDetail: $e");
-      return null;
-    }
-  }
-
-  @override
-  Future<HistoryDetail?> getReactivationDetail(String id) async {
-    debugPrint("Calling getReactivationDetail with ID: $id");
-    try {
-      final response = await _dio.get('/api/Reactivation_Sim/$id');
-      return HistoryDetail.fromJson(response.data);
-    } catch (e) {
-      debugPrint("Erreur GetReactivationDetail: $e");
-      return null;
-    }
-  }
-
-  @override
-  Future<HistoryDetail?> getUpdateDetail(String id) async {
-    debugPrint("Calling getUpdateDetail with ID: $id");
-    try {
-      final response = await _dio.get('/api/MiseAJour/$id');
-      return HistoryDetail.fromJson(response.data);
-    } catch (e) {
-      debugPrint("Erreur GetUpdateDetail: $e");
-      return null;
-    }
-  }
-
-  List<HistoryItem> _parseList(dynamic data, HistoryActionType type) {
-    if (data is! List) return [];
-    
-    return data.map((json) {
-      // Mapping basé sur le JSON fourni par le user
-      // Adaptation des clés selon le type si nécessaire (ici on utilise des clés génériques ou tentatives)
+      final data = {
+        "debut": startDate.toIso8601String(),
+        "fin": endDate.toIso8601String(),
+      };
       
-      // ID: Dépend du type
-      String id = '';
-      if (type == HistoryActionType.activation) {
-        id = (json['iD_Activation_Sim'] ?? json['id'])?.toString() ?? '';
-      } else if (type == HistoryActionType.reactivation) {
-        id = (json['iD_Reactivation_Sim'] ?? json['id'])?.toString() ?? '';
-      } else {
-         id = (json['iD_Mise_A_Jour_Client'] ?? json['id'])?.toString() ?? '';
+      final response = await _dio.post('/api/Login/historique', data: data);
+      
+      if (response.statusCode == 200 && response.data != null) {
+        return _parseHistoryResponse(response.data);
       }
+      return [];
+    } catch (e) {
+      debugPrint("Erreur GetHistory: $e");
+      return [];
+    }
+  }
 
-      // Date
-      DateTime date = DateTime.now();
-      final dateStr = json['dateActivation'] ?? json['dateReactivation'] ?? json['dateMiseAJour'] ?? json['createDate'];
-      if (dateStr != null) {
-        date = DateTime.tryParse(dateStr) ?? DateTime.now();
+  List<HistoryItem> _parseHistoryResponse(dynamic data) {
+    if (data is! Map<String, dynamic> || data['result'] == null) return [];
+    
+    final List<dynamic> resultTags = data['result'];
+    final List<HistoryItem> allOperations = [];
+    
+    for (var tag in resultTags) {
+      if (tag is Map<String, dynamic> && tag['operations'] != null) {
+        final operations = tag['operations'] as List<dynamic>;
+        for (var op in operations) {
+          allOperations.add(_mapOperationToHistoryItem(op));
+        }
       }
+    }
+    
+    return allOperations;
+  }
 
-      // Nom Complet
-      final nom = json['noms'] ?? '';
-      final prenom = json['prenoms'] ?? '';
-      final fullName = '$nom $prenom'.trim();
+  HistoryItem _mapOperationToHistoryItem(dynamic json) {
+    // Mapping des champs
+    final id = json['id']?.toString() ?? '';
+    final typeCode = json['type'] ?? 0;
+    
+    HistoryActionType type;
+    switch (typeCode) {
+      case 1:
+        type = HistoryActionType.reactivation;
+        break;
+      case 2:
+        type = HistoryActionType.update;
+        break;
+      case 0:
+      default:
+        type = HistoryActionType.activation;
+        break;
+    }
+    
+    final msisdn = json['msisdn']?.toString() ?? '';
+    final clientName = json['client'] ?? '${json['noms'] ?? ''} ${json['prenoms'] ?? ''}'.trim();
+    final etat = json['etat'] ?? 0;
+    final status = HistoryStatus.fromCode(etat is int ? etat : 0);
+    
+    DateTime operationDate = DateTime.now();
+    if (json['date_Operation'] != null) {
+      operationDate = DateTime.tryParse(json['date_Operation']) ?? DateTime.now();
+    }
 
-      // Info (Profession ou autre)
-      final info = json['profession'] ?? json['numeroPiece'] ?? 'Aucune info';
+    final info = json['profession'] ?? json['nature_Piece'] ?? '';
 
-      // Status (etat: 0 -> ? on assume 1 (Actif) par défaut si 0)
-      final etat = json['etat'] ?? 1;
-      // Mapping simple: 0=En attente/Inconnu, 1=Actif, 2=Suspendu ? 
-      // Le user n'a pas précisé, on utilise fromCode qui a des fallbacks.
-      final status = HistoryStatus.fromCode(etat is int ? etat : 1); 
+    // Création des détails
+    final details = HistoryDetail(
+      id: id,
+      msisdn: msisdn,
+      dateActivation: operationDate, // Ou autre date si dispo
+      etat: etat is int ? etat : 0,
+      noms: json['noms'],
+      prenoms: json['prenoms'],
+      sexe: json['sexe'], // bool direct dans le json
+      dateNaissance: json['date_Naissance'] != null ? DateTime.tryParse(json['date_Naissance']) : null,
+      lieuNaissance: json['lieu_Naissance'],
+      profession: json['profession'],
+      dateValiditePiece: json['date_Validite_Piece'] != null ? DateTime.tryParse(json['date_Validite_Piece']) : null,
+      numeroPiece: json['numero_Piece'],
+      adressePostale: json['adresse_Postale'],
+      numeroTelephoneClient: json['numero_Telephone_Client'],
+      mail: json['mail'],
+      adresseGeographique: json['adresse_geographique'],
+      // Mapper les autres champs si présents ou nécessaires
+      // idNaturePiece, idFrontImage, etc ne sont pas dans l'exemple JSON mais peuvent être null
+    );
 
-      return HistoryItem(
-        id: id,
-        msisdn: json['msisdn']?.toString() ?? 'Inconnu',
-        clientName: fullName.isNotEmpty ? fullName : 'Client Inconnu',
-        info: info.toString(),
-        operationDate: date,
-        status: status,
-        type: type,
-      );
-    }).toList();
+    return HistoryItem(
+      id: id,
+      msisdn: msisdn,
+      clientName: clientName,
+      info: info,
+      operationDate: operationDate,
+      status: status,
+      type: type,
+      details: details,
+    );
   }
 }

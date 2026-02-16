@@ -1,37 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../l10n/gen/app_localizations.dart';
 import '../../domain/entities/history_detail.dart';
 import '../../domain/entities/history_item.dart';
-import '../providers/history_provider.dart';
 
-class HistoryDetailPage extends ConsumerWidget {
-  final String itemId;
-  final HistoryActionType type;
+class HistoryDetailPage extends StatelessWidget {
+  final HistoryItem item;
 
   const HistoryDetailPage({
     super.key,
-    required this.itemId,
-    required this.type,
+    required this.item,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Ajout d'un log pour vérifier que le build se fait et que l'ID est correct
-    debugPrint("Build HistoryDetailPage for ID: $itemId, Type: $type");
-    
-    final asyncDetail = ref.watch(historyDetailProvider((id: itemId, type: type)));
+    final l10n = AppLocalizations.of(context)!;
+    final detail = item.details;
+    final type = item.type;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
         title: Text(
-          type.label.toUpperCase(), 
+          _getTypeLabel(type, l10n).toUpperCase(), 
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)
         ),
         centerTitle: true,
@@ -39,118 +34,88 @@ class HistoryDetailPage extends ConsumerWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, size: 24), // Utilisation de arrow_back_rounded standard
+          icon: const Icon(Icons.arrow_back_rounded, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: asyncDetail.when(
-        data: (detail) {
-          if (detail == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   Icon(Icons.error_outline_rounded, size: 64, color: AppColors.muted.withOpacity(0.5)),
-                   const SizedBox(height: 16),
-                   const Text("Impossible de charger les détails.", style: TextStyle(color: AppColors.muted)),
-                ],
-              ),
-            );
-          }
-          return SingleChildScrollView(
+      body: detail == null 
+        ? Center(child: Text(l10n.history_detail_error_load))
+        : SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(detail, isDark),
+                _buildHeader(detail, type, isDark, l10n),
                 const SizedBox(height: 24),
                 
                 _buildSection(
-                  title: "INFOS CLIENT",
-                  icon: Icons.person_outline_rounded,
-                  isDark: isDark,
-                  children: [
-                    _buildInfoRow("Nom Complet", "${detail.prenoms ?? ''} ${detail.noms ?? ''}".trim()),
-                    _buildInfoRow("Sexe", detail.sexe == true ? "Masculin" : "Féminin"),
-                    _buildInfoRow("Né(e) le", _formatDate(detail.dateNaissance)),
-                    _buildInfoRow("À", detail.lieuNaissance ?? '-'),
-                    _buildInfoRow("Profession", detail.profession ?? '-'),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                _buildSection(
-                  title: "COORDONNÉES",
-                  icon: Icons.contact_phone_outlined,
-                  isDark: isDark,
-                  children: [
-                    _buildInfoRow("Téléphone", detail.numeroTelephoneClient ?? detail.msisdn, isBold: true),
-                    _buildInfoRow("Email", detail.mail ?? '-'),
-                    _buildInfoRow("Adresse", detail.adressePostale ?? '-'),
-                    _buildInfoRow("Localisation", detail.adresseGeographique ?? '-'),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                _buildSection(
-                  title: "DOCUMENT D'IDENTITÉ",
-                  icon: Icons.badge_outlined,
-                  isDark: isDark,
-                  children: [
-                    _buildInfoRow("Type", detail.idNaturePiece?.toString() ?? 'Non spécifié'),
-                    _buildInfoRow("Numéro", detail.numeroPiece ?? '-', isCode: true),
-                    _buildInfoRow("Expire le", _formatDate(detail.dateValiditePiece)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                _buildSection(
-                  title: "DÉTAILS OPÉRATION",
+                  title: l10n.history_detail_title_op,
                   icon: Icons.info_outline_rounded,
                   isDark: isDark,
                   children: [
-                    _buildInfoRow("ID Transaction", detail.id, isCode: true),
-                    _buildInfoRow("MSISDN Cible", detail.msisdn, isCode: true),
-                    _buildInfoRow("Date", _formatDateTime(detail.dateActivation ?? detail.editDate ?? detail.createDate)),
-                    _buildInfoRow("Opérateur (ID)", detail.createCodeUser?.toString() ?? '-'),
+                    _buildInfoRow(l10n.history_detail_label_op_id, detail.id, isCode: true),
+                    _buildInfoRow(l10n.history_detail_label_op_target, detail.msisdn, isCode: true),
+                    _buildInfoRow(l10n.history_detail_label_op_date, _formatDateTime(detail.dateActivation ?? detail.editDate ?? detail.createDate)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildSection(
+                  title: l10n.history_detail_title_client,
+                  icon: Icons.person_outline_rounded,
+                  isDark: isDark,
+                  children: [
+                    _buildInfoRow(l10n.history_detail_label_fullname, "${detail.prenoms ?? ''} ${detail.noms ?? ''}".trim()),
+                    _buildInfoRow(l10n.history_detail_label_gender, detail.sexe == true ? l10n.history_detail_value_male : l10n.history_detail_value_female),
+                    _buildInfoRow(l10n.history_detail_label_dob, _formatDate(detail.dateNaissance)),
+                    _buildInfoRow(l10n.history_detail_label_pob, detail.lieuNaissance ?? '-'),
+                    _buildInfoRow(l10n.history_detail_label_job, detail.profession ?? '-'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                _buildSection(
+                  title: l10n.history_detail_title_coords,
+                  icon: Icons.contact_phone_outlined,
+                  isDark: isDark,
+                  children: [
+                    _buildInfoRow(l10n.history_detail_label_phone, detail.numeroTelephoneClient ?? detail.msisdn, isBold: true),
+                    _buildInfoRow(l10n.history_detail_label_email, detail.mail ?? '-'),
+                    _buildInfoRow(l10n.history_detail_label_address, detail.adressePostale ?? '-'),
+                    _buildInfoRow(l10n.history_detail_label_location, detail.adresseGeographique ?? '-'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                _buildSection(
+                  title: l10n.history_detail_title_id,
+                  icon: Icons.badge_outlined,
+                  isDark: isDark,
+                  children: [
+                    _buildInfoRow(l10n.history_detail_label_id_type, detail.idNaturePiece?.toString() ?? l10n.history_detail_value_unspecified),
+                    _buildInfoRow(l10n.history_detail_label_id_number, detail.numeroPiece ?? '-', isCode: true),
+                    _buildInfoRow(l10n.history_detail_label_id_expire, _formatDate(detail.dateValiditePiece)),
                   ],
                 ),
                 const SizedBox(height: 32),
               ],
             ),
-          );
-        },
-        error: (err, stack) {
-          debugPrint("Error fetching details: $err");
-          return Center(child: Text("Une erreur est survenue: $err"));
-        },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-      ),
+          ),
     );
   }
 
-  Widget _buildHeader(HistoryDetail detail, bool isDark) {
+  Widget _buildHeader(HistoryDetail detail, HistoryActionType type, bool isDark, AppLocalizations l10n) {
     // Determine status color
     final status = HistoryStatus.fromCode(detail.etat);
     final statusColor = status.color;
+    // Map status label if possible, else use default
+    String statusLabel = status.label;
+    if (status == HistoryStatus.active) statusLabel = l10n.history_status_active;
+    if (status == HistoryStatus.suspended) statusLabel = l10n.history_status_suspended;
 
     return Center(
       child: Column(
         children: [
-           Container(
-             padding: const EdgeInsets.all(20),
-             decoration: BoxDecoration(
-               color: statusColor.withOpacity(0.1),
-               shape: BoxShape.circle,
-               border: Border.all(color: statusColor.withOpacity(0.2), width: 2),
-             ),
-             child: Icon(
-                _getIconForType(type),
-                color: statusColor,
-                size: 40,
-             ),
-           ),
-           const SizedBox(height: 16),
            Text(
              "${detail.prenoms ?? ''} ${detail.noms ?? ''}".trim(),
              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -164,7 +129,7 @@ class HistoryDetailPage extends ConsumerWidget {
                borderRadius: BorderRadius.circular(20),
              ),
              child: Text(
-               status.label,
+               statusLabel,
                style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 13),
              ),
            ),
@@ -189,7 +154,7 @@ class HistoryDetailPage extends ConsumerWidget {
              color: Colors.black.withOpacity(0.03),
              blurRadius: 10,
              offset: const Offset(0, 4),
-          ),
+           ),
         ],
       ),
       child: Column(
@@ -264,6 +229,14 @@ class HistoryDetailPage extends ConsumerWidget {
       case HistoryActionType.activation: return Icons.add_circle_outline_rounded;
       case HistoryActionType.reactivation: return Icons.refresh_rounded;
       case HistoryActionType.update: return Icons.edit_outlined;
+    }
+  }
+
+  String _getTypeLabel(HistoryActionType type, AppLocalizations l10n) {
+    switch (type) {
+      case HistoryActionType.activation: return l10n.home_action_activation; // Or specific key if needed
+      case HistoryActionType.reactivation: return l10n.home_action_reactivation;
+      case HistoryActionType.update: return l10n.home_action_update;
     }
   }
 }

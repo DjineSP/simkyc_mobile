@@ -482,11 +482,11 @@ abstract class AppLocalizations {
   /// **'Reactivations'**
   String get reports_kpi_reactivations;
 
-  /// No description provided for @reports_kpi_new_customers.
+  /// No description provided for @reports_kpi_updates.
   ///
   /// In en, this message translates to:
-  /// **'New Customers'**
-  String get reports_kpi_new_customers;
+  /// **'Updates'**
+  String get reports_kpi_updates;
 
   /// No description provided for @reports_section_reason.
   ///
@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @profile_option_security_pass.
   ///
   /// In en, this message translates to:
-  /// **'Change password / PIN'**
+  /// **'Change password'**
   String get profile_option_security_pass;
 
   /// No description provided for @profile_option_security_pass_desc.
@@ -1513,6 +1513,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Make sure the document is well-lit and readable.'**
   String get step_photo_info_note;
+
+  /// No description provided for @history_detail_title_client.
+  ///
+  /// In en, this message translates to:
+  /// **'CUSTOMER INFO'**
+  String get history_detail_title_client;
+
+  /// No description provided for @history_detail_title_coords.
+  ///
+  /// In en, this message translates to:
+  /// **'CONTACT DETAILS'**
+  String get history_detail_title_coords;
+
+  /// No description provided for @history_detail_title_id.
+  ///
+  /// In en, this message translates to:
+  /// **'IDENTITY DOCUMENT'**
+  String get history_detail_title_id;
+
+  /// No description provided for @history_detail_title_op.
+  ///
+  /// In en, this message translates to:
+  /// **'OPERATION DETAILS'**
+  String get history_detail_title_op;
+
+  /// No description provided for @history_detail_label_fullname.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get history_detail_label_fullname;
+
+  /// No description provided for @history_detail_label_gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get history_detail_label_gender;
+
+  /// No description provided for @history_detail_value_male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get history_detail_value_male;
+
+  /// No description provided for @history_detail_value_female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get history_detail_value_female;
+
+  /// No description provided for @history_detail_label_dob.
+  ///
+  /// In en, this message translates to:
+  /// **'Born on'**
+  String get history_detail_label_dob;
+
+  /// No description provided for @history_detail_label_pob.
+  ///
+  /// In en, this message translates to:
+  /// **'At'**
+  String get history_detail_label_pob;
+
+  /// No description provided for @history_detail_label_job.
+  ///
+  /// In en, this message translates to:
+  /// **'Profession'**
+  String get history_detail_label_job;
+
+  /// No description provided for @history_detail_label_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get history_detail_label_phone;
+
+  /// No description provided for @history_detail_label_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get history_detail_label_email;
+
+  /// No description provided for @history_detail_label_address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get history_detail_label_address;
+
+  /// No description provided for @history_detail_label_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get history_detail_label_location;
+
+  /// No description provided for @history_detail_label_id_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get history_detail_label_id_type;
+
+  /// No description provided for @history_detail_label_id_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get history_detail_label_id_number;
+
+  /// No description provided for @history_detail_label_id_expire.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires on'**
+  String get history_detail_label_id_expire;
+
+  /// No description provided for @history_detail_label_op_id.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction ID'**
+  String get history_detail_label_op_id;
+
+  /// No description provided for @history_detail_label_op_target.
+  ///
+  /// In en, this message translates to:
+  /// **'Target MSISDN'**
+  String get history_detail_label_op_target;
+
+  /// No description provided for @history_detail_label_op_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get history_detail_label_op_date;
+
+  /// No description provided for @history_detail_label_op_agent.
+  ///
+  /// In en, this message translates to:
+  /// **'Operator (ID)'**
+  String get history_detail_label_op_agent;
+
+  /// No description provided for @history_detail_value_unspecified.
+  ///
+  /// In en, this message translates to:
+  /// **'Unspecified'**
+  String get history_detail_value_unspecified;
+
+  /// No description provided for @history_detail_error_load.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load details.'**
+  String get history_detail_error_load;
+
+  /// No description provided for @history_filter_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get history_filter_all;
+
+  /// No description provided for @history_filter_activation.
+  ///
+  /// In en, this message translates to:
+  /// **'Activation'**
+  String get history_filter_activation;
+
+  /// No description provided for @history_filter_reactivation.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivation'**
+  String get history_filter_reactivation;
+
+  /// No description provided for @history_filter_update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get history_filter_update;
+
+  /// No description provided for @history_status_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get history_status_pending;
 }
 
 class _AppLocalizationsDelegate

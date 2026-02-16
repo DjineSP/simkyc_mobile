@@ -6,7 +6,10 @@ import '../../../../app/routing/app_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import 'bottom_nav_bar.dart';
 
-class AppScaffold extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/auth_provider.dart';
+
+class AppScaffold extends ConsumerWidget {
   final String title;
   final Widget body;
   final int currentIndex;
@@ -24,10 +27,25 @@ class AppScaffold extends StatelessWidget {
     this.onFabTap,
   });
 
+  String _getInitials(String? name) {
+    if (name == null || name.isEmpty) return '';
+    final parts = name.trim().split(' ');
+    if (parts.length > 1) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    if (name.length > 1) {
+      return name.substring(0, 2).toUpperCase();
+    }
+    return name.toUpperCase();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final user = ref.watch(authProvider).asData?.value;
+    final username = user?.userData?.username ?? '';
+    final initials = _getInitials(username);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -67,12 +85,12 @@ class AppScaffold extends StatelessWidget {
               padding: const EdgeInsets.only(right: 12),
               child: GestureDetector(
                 onTap: () => onNavTap(3), // Redirige vers l'onglet Profil
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 14,
-                  backgroundColor: Color(0x33FFFFFF),
+                  backgroundColor: const Color(0x33FFFFFF),
                   child: Text(
-                    'PT',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                    initials,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
                   ),
                 ),
               ),

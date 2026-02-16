@@ -9,13 +9,13 @@ enum ReportReasonType {
 class ReportsData {
   final int activations;
   final int reactivations;
-  final int newCustomers;
+  final int updates;
   final Map<ReportReasonType, int> reasons;
 
   const ReportsData({
     required this.activations,
     required this.reactivations,
-    required this.newCustomers,
+    required this.updates,
     required this.reasons,
   });
 }

@@ -40,7 +40,7 @@ class UserModel {
 }
 
 class UserData {
-  final int idUser;
+  final String idUser;
   final String username;
   final int nombreActivation;
   final int nombreReactivation;
@@ -56,7 +56,7 @@ class UserData {
 
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
-      idUser: json['iD_User'] ?? 0,
+      idUser: json['iD_User']?.toString() ?? '',
       username: json['username'] ?? '',
       nombreActivation: json['nombre_Activation'] ?? 0,
       nombreReactivation: json['nombre_Reactivation'] ?? 0,
@@ -75,7 +75,7 @@ class UserData {
   }
 
   UserData copyWith({
-    int? idUser,
+    String? idUser,
     String? username,
     int? nombreActivation,
     int? nombreReactivation,

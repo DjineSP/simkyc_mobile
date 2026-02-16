@@ -178,8 +178,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           const SizedBox(width: 10),
           Expanded(
             child: _SummaryCard(
-              label: l10n.reports_kpi_new_customers,
-              value: (data?.newCustomers ?? 0).toString(),
+              label: l10n.reports_kpi_updates,
+              value: (data?.updates ?? 0).toString(),
               accentColor: Colors.orange,
             ),
           ),

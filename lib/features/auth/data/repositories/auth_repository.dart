@@ -103,6 +103,32 @@ class AuthRepository {
       throw Exception(e.message ?? 'Erreur lors de la récupération des statistiques');
     }
   }
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      final response = await ApiClient.instance.dio.post(
+        '/api/Login/update',
+        data: {'newPassWord': newPassword},
+        options: Options(
+          extra: {'requiresAuth': true}, // Token is required
+        ),
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic> || data['success'] != true) {
+         throw Exception(data['message']?.toString() ?? 'Echec de la mise à jour du mot de passe');
+      }
+    } on DioException catch (e) {
+      final responseData = e.response?.data;
+      if (responseData is Map<String, dynamic>) {
+        final msg = responseData['message']?.toString();
+        if (msg != null && msg.isNotEmpty) {
+          throw Exception(msg);
+        }
+      }
+      throw Exception(e.message ?? 'Erreur réseau lors de la mise à jour du mot de passe');
+    }
+  }
+
   Future<void> logout(String refreshToken) async {
     try {
       await ApiClient.instance.dio.post(

@@ -209,7 +209,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get reports_kpi_reactivations => 'Réactivations';
 
   @override
-  String get reports_kpi_new_customers => 'Nouveaux Clients';
+  String get reports_kpi_updates => 'Mises à jour';
 
   @override
   String get reports_section_reason => 'Réactivation par motif';
@@ -267,7 +267,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get profile_option_notif_desc => 'Gérer vos alertes push';
 
   @override
-  String get profile_option_security_pass => 'Changer le mot de passe / PIN';
+  String get profile_option_security_pass => 'Changer le mot de passe';
 
   @override
   String get profile_option_security_pass_desc => 'Mettre à jour vos accès';
@@ -743,4 +743,91 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get step_photo_info_note =>
       'Veillez à ce que le document soit bien éclairé et lisible.';
+
+  @override
+  String get history_detail_title_client => 'INFOS CLIENT';
+
+  @override
+  String get history_detail_title_coords => 'COORDONNÉES';
+
+  @override
+  String get history_detail_title_id => 'DOCUMENT D\'IDENTITÉ';
+
+  @override
+  String get history_detail_title_op => 'DÉTAILS OPÉRATION';
+
+  @override
+  String get history_detail_label_fullname => 'Nom Complet';
+
+  @override
+  String get history_detail_label_gender => 'Sexe';
+
+  @override
+  String get history_detail_value_male => 'Masculin';
+
+  @override
+  String get history_detail_value_female => 'Féminin';
+
+  @override
+  String get history_detail_label_dob => 'Né(e) le';
+
+  @override
+  String get history_detail_label_pob => 'À';
+
+  @override
+  String get history_detail_label_job => 'Profession';
+
+  @override
+  String get history_detail_label_phone => 'Téléphone';
+
+  @override
+  String get history_detail_label_email => 'Email';
+
+  @override
+  String get history_detail_label_address => 'Adresse';
+
+  @override
+  String get history_detail_label_location => 'Localisation';
+
+  @override
+  String get history_detail_label_id_type => 'Type';
+
+  @override
+  String get history_detail_label_id_number => 'Numéro';
+
+  @override
+  String get history_detail_label_id_expire => 'Expire le';
+
+  @override
+  String get history_detail_label_op_id => 'ID Transaction';
+
+  @override
+  String get history_detail_label_op_target => 'MSISDN Cible';
+
+  @override
+  String get history_detail_label_op_date => 'Date';
+
+  @override
+  String get history_detail_label_op_agent => 'Opérateur (ID)';
+
+  @override
+  String get history_detail_value_unspecified => 'Non spécifié';
+
+  @override
+  String get history_detail_error_load => 'Impossible de charger les détails.';
+
+  @override
+  String get history_filter_all => 'Tous';
+
+  @override
+  String get history_filter_activation => 'Activation';
+
+  @override
+  String get history_filter_reactivation => 'Réactivation';
+
+  @override
+  String get history_filter_update => 'Mise à jour';
+
+  @override
+  String get history_status_pending => 'En attente';
 }

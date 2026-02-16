@@ -68,9 +68,16 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   @override
   HistoryState build() {
-    final initial = HistoryState.initial();
+    // Initial: Last 30 days
+    final end = DateTime.now();
+    final start = end.subtract(const Duration(days: 30));
+    final initialRange = DateTimeRangeFilter(start: start, end: end);
+    
+    // Initial state with date range set
+    state = HistoryState.initial().copyWith(dateRange: initialRange);
+    
     Future.microtask(_loadData);
-    return initial;
+    return state;
   }
 
   Future<void> setQuery(String query) async {
@@ -80,13 +87,17 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   Future<void> setDateRange(DateTimeRange? range) async {
     if (range == null) {
-      state = state.copyWith(clearDateRange: true);
+      // Revert to default 30 days if cleared (though UI might not allow clearing to null if we enforce it)
+      final end = DateTime.now();
+      final start = end.subtract(const Duration(days: 30));
+      state = state.copyWith(dateRange: DateTimeRangeFilter(start: start, end: end));
     } else {
       state = state.copyWith(
         dateRange: DateTimeRangeFilter(start: range.start, end: range.end),
       );
     }
-    _applyFilters();
+    // Date change triggers fetch
+    await _loadData();
   }
 
   Future<void> setFilterType(HistoryActionType? type) async {
@@ -100,11 +111,7 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   Future<void> refresh() => _loadData();
 
-  // La pagination n'est plus nécessaire côté serveur car on a tout,
-  // mais on peut simuler ou retirer loadMore si l'UI le demande.
   Future<void> loadMore() async {
-    // Avec le filtrage local complet, loadMore n'a plus vraiment de sens sauf si on pagine localement.
-    // Pour l'instant on laisse vide ou on marque comme "fin".
     state = state.copyWith(hasMore: false);
   }
 
@@ -112,15 +119,19 @@ class HistoryNotifier extends Notifier<HistoryState> {
     state = state.copyWith(
       isLoading: true,
       isLoadingMore: false,
-      hasMore: false, // On charge tout d'un coup
+      hasMore: false, 
     );
 
     try {
       final repo = ref.read(historyRepositoryProvider);
-      // On charge TOUT
-      _allItems = await repo.getAllHistory();
       
-      // On applique les filtres initiaux
+      final start = state.dateRange!.start;
+      final end = state.dateRange!.end;
+      
+      // Fetch with specific dates
+      _allItems = await repo.getHistory(startDate: start, endDate: end);
+      
+      // Apply local filters (Query, Type)
       _applyFilters();
     } catch (_) {
       state = state.copyWith(isLoading: false, items: []);
@@ -143,29 +154,22 @@ class HistoryNotifier extends Notifier<HistoryState> {
           item.clientName.toLowerCase().contains(q)).toList();
     }
 
-    // 3. Filter by Date
-    if (state.dateRange != null) {
-      final start = state.dateRange!.start;
-      final end = state.dateRange!.end;
-      filtered = filtered.where((item) {
-        return item.operationDate.isAfter(start.subtract(const Duration(days: 1))) &&
-               item.operationDate.isBefore(end.add(const Duration(days: 1)));
-      }).toList();
-    }
+    // Date filtering is handled by the API now.
+    // However, if we want to be extra sure or handle hour precision, we could filter.
+    // But typically API handles it.
     
-    // Sort (Already sorted by repo but good to ensure)
-    // filtered.sort((a, b) => b.operationDate.compareTo(a.operationDate));
+    // Sort
+    filtered.sort((a, b) => b.operationDate.compareTo(a.operationDate));
 
     state = state.copyWith(
       items: filtered,
       isLoading: false,
-      hasMore: false, // Tout est chargé
+      hasMore: false,
     );
   }
 }
 
 final historyRepositoryProvider = Provider<HistoryRepository>((ref) {
-  // Injection de l'implémentation concrète du repository.
   return HistoryRepositoryImpl();
 });
 
@@ -173,7 +177,4 @@ final historyProvider = NotifierProvider<HistoryNotifier, HistoryState>(() {
   return HistoryNotifier();
 });
 
-final historyDetailProvider = FutureProvider.family<HistoryDetail?, ({String id, HistoryActionType type})>((ref, arg) async {
-  final repo = ref.read(historyRepositoryProvider);
-  return await repo.getHistoryDetail(arg.id, arg.type);
-});
+// Removed historyDetailProvider as details are now passed directly

@@ -10,6 +10,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../app/routing/app_router.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
+import 'change_password_page.dart';
 
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -102,7 +103,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 l10n,
                 '', // unused phone/login param
                 fullName: userData?.username ?? 'Utilisateur',
-                agentId: (userData?.idUser ?? 0).toString(),
+                agentId: userData?.idUser ?? '',
                 roleLabel: 'Agent', 
               ),
               const SizedBox(height: 24),
@@ -113,20 +114,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   icon: Icons.language,
                   title: l10n.profile_option_lang,
                   subtitle: l10n.profile_option_lang_desc,
+                  showArrow: false,
                   onTap: () => _showLanguageDialog(context, ref),
                 ),
                 _ProfileOption(
                   icon: settings.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
                   title: l10n.profile_option_theme,
                   subtitle: l10n.profile_option_theme_desc,
+                  showArrow: false,
                   onTap: () => _toggleTheme(ref),
                 ),
-                _ProfileOption(
-                  icon: Icons.notifications_none_rounded,
-                  title: l10n.profile_option_notif,
-                  subtitle: l10n.profile_option_notif_desc,
-                  onTap: () {},
-                ),
+
               ]),
 
               const SizedBox(height: 24),
@@ -136,7 +134,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   icon: Icons.lock_outline_rounded,
                   title: l10n.profile_option_security_pass,
                   subtitle: l10n.profile_option_security_pass_desc,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
+                    );
+                  },
                 ),
                 _ProfileToggleOption(
                   icon: Icons.fingerprint_rounded,
@@ -147,22 +150,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   value: biometricEnabled,
                   onChanged: (v) => _toggleBiometric(context, ref, v),
                 ),
-                _ProfileOption(
-                  icon: Icons.history_toggle_off_rounded,
-                  title: l10n.profile_option_last_login,
-                  subtitle: l10n.profile_option_last_login_desc,
-                ),
+
               ]),
 
-              const SizedBox(height: 24),
-              _sectionTitle(l10n.profile_section_about, theme),
-              _buildOptionsGroup(theme, [
-                _ProfileOption(
-                  icon: Icons.info_outline_rounded,
-                  title: l10n.profile_option_about_title,
-                  subtitle: l10n.profile_option_about_desc,
-                ),
-              ]),
+
 
               const SizedBox(height: 32),
               _buildLogoutButton(l10n),
@@ -184,24 +175,38 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _showLanguageDialog(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final currentLocale = ref.read(appSettingsProvider).locale;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.profile_option_lang),
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        surfaceTintColor: Colors.transparent, // Remove M3 tint
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          l10n.profile_option_lang,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? Colors.white : Colors.black),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text("Français"),
-              trailing: currentLocale.languageCode == 'fr' ? const Icon(Icons.check_rounded) : null,
+              title: Text("Français", style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+              trailing: currentLocale.languageCode == 'fr' 
+                  ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) 
+                  : null,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 ref.read(appSettingsProvider.notifier).updateLocale(const Locale('fr'));
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: const Text("English"),
-              trailing: currentLocale.languageCode == 'en' ? const Icon(Icons.check_rounded) : null,
+              title: Text("English", style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+              trailing: currentLocale.languageCode == 'en' 
+                  ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) 
+                  : null,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onTap: () {
                 ref.read(appSettingsProvider.notifier).updateLocale(const Locale('en'));
                 Navigator.pop(context);
@@ -318,13 +323,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 }
 
+
 class _ProfileOption extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final bool showArrow;
 
-  const _ProfileOption({required this.icon, required this.title, required this.subtitle, this.onTap});
+  const _ProfileOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+    this.showArrow = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +368,7 @@ class _ProfileOption extends StatelessWidget {
                 ],
               ),
             ),
-            if (onTap != null) const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+            if (onTap != null && showArrow) const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],
         ),
       ),

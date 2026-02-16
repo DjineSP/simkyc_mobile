@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'history_detail.dart';
 
 /// Type d'action pour le filtrage
 enum HistoryActionType {
@@ -37,6 +38,7 @@ class HistoryItem {
   final DateTime operationDate;
   final HistoryStatus status;
   final HistoryActionType type; // Pour savoir de quelle source cela vient
+  final HistoryDetail? details;
 
   HistoryItem({
     required this.id,
@@ -46,5 +48,6 @@ class HistoryItem {
     required this.operationDate,
     required this.status,
     required this.type,
+    this.details,
   });
 }

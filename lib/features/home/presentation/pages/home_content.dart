@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // Colors
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -114,7 +114,7 @@ class HomeContent extends ConsumerWidget {
                       child: _KpiCard(
                         title: l10n.home_action_activation, 
                         value: isLoading ? '0000' : (data?.totalActivations.toString() ?? '0'), 
-                        color: Colors.blueAccent,
+                        color: Colors.green,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -125,14 +125,14 @@ class HomeContent extends ConsumerWidget {
                           child: _KpiCard(
                             title: l10n.home_action_reactivation, 
                             value: isLoading ? '0000' : (data?.totalReactivations.toString() ?? '0'), 
-                            color: Colors.orangeAccent,
+                            color: Colors.blue,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(child: _KpiCard(
                           title: l10n.home_action_update, 
                           value: isLoading ? '0000': (data?.totalUpdates.toString() ?? '0'), 
-                          color: Colors.purpleAccent,
+                          color: Colors.orange,
                         )),
                       ],
                     ),
@@ -251,11 +251,17 @@ class _ActionTile extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _ActionTile({required this.title, required this.subtitle, required this.icon, required this.onTap});
+  const _ActionTile({
+    required this.title, 
+    required this.subtitle, 
+    required this.icon, 
+    required this.onTap
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -282,5 +288,6 @@ class _ActionData {
   final String subtitle;
   final IconData icon;
   final String? route;
-  _ActionData({required this.title, required this.subtitle, required this.icon, this.route});
+  final Color? color;
+  _ActionData({required this.title, required this.subtitle, required this.icon, this.route, this.color});
 }
