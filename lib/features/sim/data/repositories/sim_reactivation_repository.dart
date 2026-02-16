@@ -5,32 +5,56 @@ import '../../../../core/api/api_client.dart';
 
 class SimReactivationRepository {
 
+  String? _formatDate(dynamic dateStr) {
+    if (dateStr == null || dateStr.toString().isEmpty) return null;
+    try {
+      // Tente de parser yyyy-MM-dd
+      final date = DateTime.parse(dateStr.toString());
+      // Retourne dd/MM/yyyy
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (_) {
+      return dateStr.toString();
+    }
+  }
+
   Future<Map<String, dynamic>> fetchActivationByPhone(String msisdn) async {
     try {
       final response = await ApiClient.instance.dio.get(
-        '/api/Reactivation_Sim',
-        queryParameters: {'numeroClient': msisdn},
+        '/api/Reactivation_Sim/$msisdn',
       );
 
       final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw Exception('Réponse backend invalide');
+      Map<String, dynamic> item;
+
+      if (data is List && data.isNotEmpty) {
+        item = data.first as Map<String, dynamic>;
+      } else if (data is Map<String, dynamic>) {
+         if (data.containsKey('data')) {
+           final inner = data['data'];
+           if (inner is List && inner.isNotEmpty) {
+             item = inner.first;
+           } else if (inner is Map<String, dynamic>) {
+             item = inner;
+           } else {
+             item = data;
+           }
+         } else {
+            item = data;
+         }
+      } else {
+        throw Exception('Aucune donnée trouvée pour ce numéro');
       }
 
-      final dynamic result = data['succes'];
-      final bool isOk = result is bool ? result : true;
-      final String? message = data['message'].toString();
-
-      if (!isOk) {
-        throw Exception(message ?? 'Recherche activation échouée');
-      }
-
-      final dynamic payload = data['data'] ?? data['item'] ?? data['activation'] ?? data['resultData'];
-      if (payload is Map) {
-        return Map<String, dynamic>.from(payload);
-      }
-
-      return data;
+      // Normalisation des données pour l'UI
+      return {
+        ...item,
+        'nom': item['noms'],
+        'prenom': item['prenoms'],
+        'adresseGeo': item['adresseGeographique'],
+        'dateNaissance': _formatDate(item['dateNaissance']),
+        'dateValiditePiece': _formatDate(item['dateValiditePiece']),
+        'sexe': item['sexe'], // bool
+      };
     } on DioException catch (e) {
       final responseData = e.response?.data;
       if (responseData is Map<String, dynamic>) {

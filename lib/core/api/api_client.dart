@@ -101,11 +101,16 @@ class ApiClient {
       final refreshToken = await StorageService.instance.secureRead(_kRefreshTokenKey);
       if (refreshToken == null) return null;
 
-      // Use a new Dio instance to avoid interceptor loop or just use correct options
-      // But creating new Dio is safer to avoid any global interceptor interference if we add more
       final refreshDio = Dio(BaseOptions(
         baseUrl: dio.options.baseUrl,
         headers: {'Content-Type': 'application/json'},
+      ));
+      
+      // Ajouter les logs pour le refresh aussi
+      refreshDio.interceptors.add(LogInterceptor(
+        requestBody: true, 
+        responseBody: true,
+        logPrint: (o) => debugPrint('REFRESH: $o'),
       ));
 
       final response = await refreshDio.post(
@@ -113,15 +118,23 @@ class ApiClient {
         data: {'refreshToken': refreshToken},
       );
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final tokenData = response.data['token_Data'];
-        return {
-          'accessToken': tokenData['accessToken'],
-          'refreshToken': tokenData['refreshToken'],
-        };
+      final data = response.data;
+      // Handle "data" wrapper if present
+      final source = (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) 
+          ? data['data'] 
+          : data;
+
+      if (response.statusCode == 200 && source is Map<String, dynamic>) {
+        final tokenData = source['token_Data'];
+        if (tokenData != null) {
+           return {
+             'accessToken': tokenData['accessToken'],
+             'refreshToken': tokenData['refreshToken'],
+           };
+        }
       }
     } catch (e) {
-      // Refresh failed
+      debugPrint("Refresh token error: $e");
     }
     return null;
   }

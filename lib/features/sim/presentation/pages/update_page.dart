@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../l10n/gen/app_localizations.dart';
 
@@ -185,6 +186,18 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     if (_ctrls['idValidity']!.text.trim().isEmpty) {
       return _applyError('idValidity', l10n.sim_error_id_validity);
     }
+    // Validation date minimale (dateJour)
+    try {
+        final date = DateFormat('dd/MM/yyyy').parse(_ctrls['idValidity']!.text.trim());
+        final user = ref.read(authProvider).asData?.value?.userData;
+        final minDate = user?.dateJour ?? DateTime.now();
+        // On normalise
+        final minDateNorm = DateTime(minDate.year, minDate.month, minDate.day);
+        
+        if (date.isBefore(minDateNorm)) {
+           return _applyError('idValidity', "Date invalide (min: ${DateFormat('dd/MM/yyyy').format(minDateNorm)})");
+        }
+    } catch (_) {}
 
     // 4. Photos
     if (_frontImg == null) {

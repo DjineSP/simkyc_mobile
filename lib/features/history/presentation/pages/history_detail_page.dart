@@ -65,7 +65,7 @@ class HistoryDetailPage extends StatelessWidget {
                   icon: Icons.person_outline_rounded,
                   isDark: isDark,
                   children: [
-                    _buildInfoRow(l10n.history_detail_label_fullname, "${detail.prenoms ?? ''} ${detail.noms ?? ''}".trim()),
+                     _buildInfoRow(l10n.history_detail_label_fullname, "${detail.noms ?? ''} ${detail.prenoms ?? ''}".trim()),
                     _buildInfoRow(l10n.history_detail_label_gender, detail.sexe == true ? l10n.history_detail_value_male : l10n.history_detail_value_female),
                     _buildInfoRow(l10n.history_detail_label_dob, _formatDate(detail.dateNaissance)),
                     _buildInfoRow(l10n.history_detail_label_pob, detail.lieuNaissance ?? '-'),
@@ -117,7 +117,7 @@ class HistoryDetailPage extends StatelessWidget {
       child: Column(
         children: [
            Text(
-             "${detail.prenoms ?? ''} ${detail.noms ?? ''}".trim(),
+             "${detail.noms ?? ''} ${detail.prenoms ?? ''}".trim(),
              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
              textAlign: TextAlign.center,
            ),

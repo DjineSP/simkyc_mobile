@@ -21,7 +21,7 @@ class MyApp extends ConsumerWidget {
     };
 
     return MaterialApp.router(
-      title: 'Mon Template Mobile',
+      title: 'SIM-KYC',
       debugShowCheckedModeBanner: false,
 
       // Gestion dynamique de la langue

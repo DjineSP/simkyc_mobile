@@ -45,6 +45,7 @@ class UserData {
   final int nombreActivation;
   final int nombreReactivation;
   final int nombreMiseAJour;
+  final DateTime? dateJour;
 
   UserData({
     required this.idUser,
@@ -52,6 +53,7 @@ class UserData {
     required this.nombreActivation,
     required this.nombreReactivation,
     required this.nombreMiseAJour,
+    this.dateJour,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,7 @@ class UserData {
       nombreActivation: json['nombre_Activation'] ?? 0,
       nombreReactivation: json['nombre_Reactivation'] ?? 0,
       nombreMiseAJour: json['nombre_Mise_A_Jour'] ?? 0,
+      dateJour: json['date_Jour'] != null ? DateTime.tryParse(json['date_Jour']) : null,
     );
   }
 
@@ -71,6 +74,7 @@ class UserData {
       'nombre_Activation': nombreActivation,
       'nombre_Reactivation': nombreReactivation,
       'nombre_Mise_A_Jour': nombreMiseAJour,
+      'date_Jour': dateJour?.toIso8601String(),
     };
   }
 
@@ -80,6 +84,7 @@ class UserData {
     int? nombreActivation,
     int? nombreReactivation,
     int? nombreMiseAJour,
+    DateTime? dateJour,
   }) {
     return UserData(
       idUser: idUser ?? this.idUser,
@@ -87,6 +92,7 @@ class UserData {
       nombreActivation: nombreActivation ?? this.nombreActivation,
       nombreReactivation: nombreReactivation ?? this.nombreReactivation,
       nombreMiseAJour: nombreMiseAJour ?? this.nombreMiseAJour,
+      dateJour: dateJour ?? this.dateJour,
     );
   }
 }

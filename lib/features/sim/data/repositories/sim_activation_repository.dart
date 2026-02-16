@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,7 +89,13 @@ class SimActivationRepository {
     if (serial.endsWith('000')) {
       throw Exception('MSISDN introuvable');
     }
-    return '690000000';
+    final random = Random();
+    // Génère 8 chiffres aléatoires
+    String digits = '';
+    for (int i = 0; i < 8; i++) {
+      digits += random.nextInt(10).toString();
+    }
+    return '6$digits';
   }
 
   Future<Map<String, dynamic>> activateSim({

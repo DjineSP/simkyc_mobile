@@ -109,6 +109,20 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
         _nodes['idValidity']!.requestFocus();
         return false;
       }
+      // Validation de la date minimale (dateJour)
+      try {
+        final date = DateFormat('dd/MM/yyyy').parse(_ctrls['idValidity']!.text.trim());
+        final user = ref.read(authProvider).asData?.value?.userData;
+        final minDate = user?.dateJour ?? DateTime.now();
+        // On normalise pour comparer uniquement les dates (sans heures)
+        final minDateNorm = DateTime(minDate.year, minDate.month, minDate.day);
+        
+        if (date.isBefore(minDateNorm)) {
+           setState(() => _errors['idValidity'] = "Date invalide (min: ${DateFormat('dd/MM/yyyy').format(minDateNorm)})");
+           _nodes['idValidity']!.requestFocus();
+           return false;
+        }
+      } catch (_) {}
     }
     else if (_currentStep == 4) {
       if (_frontImg == null) {

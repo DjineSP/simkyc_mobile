@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
 import 'dart:io';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/providers/auth_provider.dart';
 import '../../../data/repositories/sim_activation_repository.dart';
 import '../components/activation_helpers.dart';
 
@@ -56,7 +57,7 @@ class StepEditClient extends ConsumerWidget {
                       Expanded(child: _buildField(context, l10n.step_cust_firstname, 'firstName', hint: l10n.step_cust_hint_firstname)),
                     ],
                   ),
-                  _buildDatePicker(context, l10n.step_cust_dob, 'dob'),
+                  _buildDatePicker(context, ref, l10n.step_cust_dob, 'dob'),
                   _buildField(context, l10n.step_cust_pob, 'pob', hint: l10n.step_cust_hint_pob),
                   LabelText(l10n.step_cust_gender),
                   Row(
@@ -161,7 +162,7 @@ class StepEditClient extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildField(context, l10n.step_edit_id_number_label, 'idNumber', hint: l10n.step_edit_id_number_hint),
-                  _buildDatePicker(context, l10n.step_id_validity, 'idValidity', isFuture: true),
+                  _buildDatePicker(context, ref, l10n.step_id_validity, 'idValidity', isFuture: true),
 
                   const SizedBox(height: 8),
                   LabelText(l10n.step_edit_photos_label),
@@ -199,9 +200,19 @@ class StepEditClient extends ConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(BuildContext context, String label, String key, {bool isFuture = false}) {
+  Widget _buildDatePicker(BuildContext context, WidgetRef ref, String label, String key, {bool isFuture = false}) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    
+    // Get min date from provider if isFuture (validity date)
+    DateTime minDate = DateTime.now();
+    if (isFuture) {
+      final user = ref.read(authProvider).asData?.value?.userData;
+      if (user?.dateJour != null) {
+        minDate = user!.dateJour!; 
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -217,10 +228,17 @@ class StepEditClient extends ConsumerWidget {
             suffixIcon: const Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.primary),
           ),
           onTap: () async {
+            final initialDate = isFuture 
+                ? minDate.add(const Duration(days: 30)) 
+                : DateTime.now().subtract(const Duration(days: 6570));
+                
+            // Ensure initialDate is not before firstDate
+            final effectiveInitial = initialDate.isBefore(minDate) ? minDate : initialDate;
+
             final p = await showDatePicker(
               context: context,
-              initialDate: isFuture ? DateTime.now().add(const Duration(days: 30)) : DateTime.now().subtract(const Duration(days: 6570)),
-              firstDate: isFuture ? DateTime.now() : DateTime(1900),
+              initialDate: effectiveInitial,
+              firstDate: isFuture ? minDate : DateTime(1900),
               lastDate: isFuture ? DateTime(2100) : DateTime.now(),
               builder: (context, child) => Theme(
                 data: theme.copyWith(colorScheme: theme.colorScheme.copyWith(primary: AppColors.primary)),

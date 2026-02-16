@@ -70,7 +70,7 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
     }
     
     final msisdn = json['msisdn']?.toString() ?? '';
-    final clientName = json['client'] ?? '${json['noms'] ?? ''} ${json['prenoms'] ?? ''}'.trim();
+    final clientName = '${json['noms'] ?? ''} ${json['prenoms'] ?? ''}'.trim();
     final etat = json['etat'] ?? 0;
     final status = HistoryStatus.fromCode(etat is int ? etat : 0);
     
