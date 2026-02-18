@@ -53,6 +53,18 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
   File? _backImg;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-clear errors
+    _ctrls['serial']!.addListener(() {
+      if (_errors['serial'] != null) setState(() => _errors['serial'] = null);
+    });
+    _ctrls['msisdn']!.addListener(() {
+      if (_errors['msisdn'] != null) setState(() => _errors['msisdn'] = null);
+    });
+  }
+
+  @override
   void dispose() {
     _ctrls.forEach((_, v) => v.dispose());
     _nodes.forEach((_, v) => v.dispose());
@@ -69,7 +81,10 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
         _nodes['serial']!.requestFocus();
         return false;
       }
-      if (_ctrls['msisdn']!.text.isEmpty) return await _fetchSimDataManually();
+      if (_ctrls['msisdn']!.text.isEmpty) {
+        setState(() => _errors['msisdn'] = l10n.step_sim_error_msisdn_required);
+        return false;
+      }
     }
     else if (_currentStep == 2) {
       if (_ctrls['lastName']!.text.trim().isEmpty) {
@@ -169,7 +184,7 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
       await showAppMessageDialog(
         context,
         title: l10n.common_error_title,
-        message: e.toString(),
+        message: e.toString().replaceAll('Exception: ', ''),
         type: AppMessageType.error,
       );
       return false;
@@ -232,7 +247,7 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
       await showAppMessageDialog(
         context,
         title: l10n.common_error_title,
-        message: e.toString(),
+        message: e.toString().replaceAll('Exception: ', ''),
         type: AppMessageType.error,
       );
     }
@@ -270,7 +285,15 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
 
   Widget _buildBody() {
     switch (_currentStep) {
-      case 1: return StepSimDetails(msisdn: _ctrls['msisdn']!, serial: _ctrls['serial']!, msisdnFocus: _nodes['msisdn']!, serialFocus: _nodes['serial']!, msisdnError: _errors['msisdn'], serialError: _errors['serial']);
+      case 1: return StepSimDetails(
+        msisdn: _ctrls['msisdn']!,
+        serial: _ctrls['serial']!,
+        msisdnFocus: _nodes['msisdn']!,
+        serialFocus: _nodes['serial']!,
+        msisdnError: _errors['msisdn'],
+        serialError: _errors['serial'],
+        onFetchMsisdn: _fetchSimDataManually,
+      );
       case 2: return StepCustomerInfo(ctrls: _ctrls, nodes: _nodes, errors: _errors, isMale: _isMale, onGenderChanged: (v) => setState(() => _isMale = v));
       case 3: return StepIdDetails(nature: _ctrls['idNature']!, number: _ctrls['idNumber']!, validity: _ctrls['idValidity']!, natureFocus: _nodes['idNature']!, numberFocus: _nodes['idNumber']!, validityFocus: _nodes['idValidity']!, natureError: _errors['idNature'], numberError: _errors['idNumber'], validityError: _errors['idValidity']);
       case 4: return StepPhotoUpload(frontImage: _frontImg, backImage: _backImg, frontError: _errors['idFront'], backError: _errors['idBack'], onPhotoCaptured: (file, isFront) { setState(() { if (isFront) { _frontImg = file; _errors['idFront'] = null; } else { _backImg = file; _errors['idBack'] = null; } }); });
@@ -292,9 +315,9 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
               child: OutlinedButton(
                 onPressed: _isSubmitting ? null : () => setState(() => _currentStep--),
                 style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: theme.dividerColor),
                   minimumSize: const Size.fromHeight(btnHeight),
                   shape: RoundedRectangleBorder(borderRadius: borderRadius),
-                  side: BorderSide(color: theme.dividerColor),
                 ),
                 child: Text(
                   l10n.sim_btn_prev,

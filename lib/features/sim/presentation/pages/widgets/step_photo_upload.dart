@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 import '../../../../../l10n/gen/app_localizations.dart';
+import '../../../../../core/constants/app_colors.dart';
 import '../components/activation_helpers.dart';
 
 class StepPhotoUpload extends StatefulWidget {
@@ -38,45 +39,46 @@ class _StepPhotoUploadState extends State<StepPhotoUpload> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.step_photo_source_title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _SourceOption(
-                      icon: Icons.camera_alt_rounded,
-                      label: l10n.step_photo_source_camera,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _processAction(ImageSource.camera, isFront);
-                      },
-                    ),
-                    _SourceOption(
-                      icon: Icons.photo_library_rounded,
-                      label: l10n.step_photo_source_gallery,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _processAction(ImageSource.gallery, isFront);
-                      },
-                    ),
-                  ],
-                ),
-              ],
+          title: Text(
+            l10n.step_photo_source_title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              color: theme.colorScheme.onSurface,
             ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _SourceOption(
+                    icon: Icons.camera_alt_rounded,
+                    label: l10n.step_photo_source_camera,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _processAction(ImageSource.camera, isFront);
+                    },
+                  ),
+                  _SourceOption(
+                    icon: Icons.photo_library_rounded,
+                    label: l10n.step_photo_source_gallery,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _processAction(ImageSource.gallery, isFront);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },

@@ -59,6 +59,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
   };
 
   final Map<String, String?> _errors = {};
+  int? _idActivationSim;
   File? _frontImg;
   File? _backImg;
 
@@ -170,9 +171,10 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     }
 
     // 2. Localisation & Compléments
-    if (_ctrls['geo']!.text.trim().isEmpty) {
-      return _applyError('geo', l10n.sim_update_error_geo_required);
-    }
+    // 2. Localisation & Compléments
+    // if (_ctrls['geo']!.text.trim().isEmpty) {
+    //   return _applyError('geo', l10n.sim_update_error_geo_required);
+    // }
 
     // 3. Document d'identification
     if (_ctrls['idNature']!.text.trim().isEmpty) {
@@ -261,6 +263,14 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
       if (!mounted) return;
 
       setState(() {
+        final idSim = data['idActivationSim'] ?? data['iD_Activation_Sim'];
+        if (idSim is int) {
+          _idActivationSim = idSim;
+        } else if (idSim is String) {
+          _idActivationSim = int.tryParse(idSim);
+        } else {
+          _idActivationSim = 0;
+        }
         _ctrls['firstName']!.text = (data['prenom'] ?? data['firstName'] ?? '').toString();
         _ctrls['lastName']!.text = (data['nom'] ?? data['lastName'] ?? '').toString();
         _ctrls['dob']!.text = (data['dateNaissance'] ?? data['dob'] ?? '').toString();
@@ -299,7 +309,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
         showAppMessageDialog(
           context,
           title: l10n.sim_update_error_title,
-          message: l10n.sim_update_error_subscriber_not_found,
+          message: e.toString().replaceAll('Exception: ', ''),
           type: AppMessageType.error,
         );
       }
@@ -354,24 +364,28 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
   Future<ImageSource?> _showSourceDialog() {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    
     return showDialog<ImageSource>(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-          child: Column(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white, // AppColors.darkSurface hardcoded or import if available
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            l10n.step_photo_source_title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                l10n.step_photo_source_title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -391,8 +405,8 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -446,7 +460,12 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
         'idNaturePiece': int.tryParse(_ctrls['idNature']!.text.trim()) ?? 0,
       };
 
-      final resp = await repo.updateClient(fields: fields, idFront: front, idBack: back);
+      final resp = await repo.updateClient(
+        idActivationSim: _idActivationSim ?? 0,
+        fields: fields,
+        idFront: front,
+        idBack: back,
+      );
 
       if (!mounted) return;
 
@@ -471,7 +490,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
       await showAppMessageDialog(
         context,
         title: l10n.sim_update_error_title,
-        message: e.toString(),
+        message: e.toString().replaceAll('Exception: ', ''),
         type: AppMessageType.error,
       );
     }
@@ -558,7 +577,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
               child: OutlinedButton(
                 onPressed: _isLoading ? null : () => _goToStep(_currentStep - 1),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: theme.dividerColor),
+                  side: BorderSide(color: theme.dividerColor, width: 1),
                   minimumSize: const Size.fromHeight(btnHeight),
                   shape: RoundedRectangleBorder(borderRadius: borderRadius),
                 ),

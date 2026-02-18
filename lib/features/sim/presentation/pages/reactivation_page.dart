@@ -8,6 +8,8 @@ import '../../../../../core/providers/auth_provider.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
 import '../../data/repositories/sim_reactivation_repository.dart';
+import '../../data/repositories/sim_activation_repository.dart'; // Pour idNaturesProvider
+import '../../../history/domain/entities/history_item.dart'; // Pour HistoryStatus
 import 'widgets/step_search_sim.dart';
 import 'widgets/step_check_client.dart';
 import 'widgets/step_new_sim_details.dart';
@@ -98,22 +100,58 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
       final repo = ref.read(simReactivationRepositoryProvider);
       final data = await repo.fetchActivationByPhone(phone);
 
+      // Récupération des labels pour l'affichage (Nature pièce, Statut, ...)
+      String natureLabel = (data['idNature'] ?? data['naturePiece'] ?? data['piece'] ?? data['idNaturePiece'])?.toString() ?? '-';
+      
+      // Tentative de résolution du libellé de la pièce via le provider si c'est un ID numérique
+      if (int.tryParse(natureLabel) != null) {
+        try {
+          final natures = await ref.read(idNaturesProvider.future);
+          final id = int.parse(natureLabel);
+          final found = natures.firstWhere((e) => e['id'] == id, orElse: () => {});
+          if (found.isNotEmpty) {
+            natureLabel = found['libelle'] ?? natureLabel;
+          }
+        } catch (e) {
+          // Ignorer erreur de chargement des natures, on garde l'ID
+        }
+      }
+
+      // Mapping du statut
+      final statusCode = data['status'] ?? data['etat'] ?? data['state'];
+      String statusLabel = statusCode?.toString() ?? '-';
+      if (statusCode is int) {
+         statusLabel = HistoryStatus.fromCode(statusCode).label;
+      }
+      
+      // Mapping du genre
+      final genderRaw = data['gender'] ?? data['sexe'];
+      String genderLabel = genderRaw?.toString() ?? '-';
+      if (genderRaw is bool) {
+        genderLabel = genderRaw ? "Masculin" : "Féminin"; 
+      } else if (genderRaw.toString().toLowerCase() == 'true') {
+         genderLabel = "Masculin";
+      } else if (genderRaw.toString().toLowerCase() == 'false') {
+         genderLabel = "Féminin";
+      }
+
+
       setState(() {
         _clientData = {
           ...data,
           'msisdn': (data['msisdn'] ?? data['telephone'] ?? phone)?.toString(),
           'serial': (data['serial'] ?? data['iccid'] ?? data['simSerial'] ?? data['serialSearch'])?.toString(),
-          'status': (data['status'] ?? data['etat'] ?? data['state'])?.toString(),
+          'status': statusLabel,
           'nom': (data['nom'] ?? data['lastName'])?.toString(),
           'prenom': (data['prenom'] ?? data['firstName'])?.toString(),
           'dob': (data['dob'] ?? data['dateNaissance'])?.toString(),
           'pob': (data['pob'] ?? data['lieuNaissance'])?.toString(),
-          'gender': (data['gender'] ?? data['sexe'])?.toString(),
+          'gender': genderLabel,
           'job': (data['job'] ?? data['profession'])?.toString(),
           'geo': (data['geo'] ?? data['adresseGeo'])?.toString(),
           'post': (data['post'] ?? data['adressePostale'])?.toString(),
           'email': (data['email'] ?? data['mail'])?.toString(),
-          'idNature': (data['idNature'] ?? data['naturePiece'] ?? data['piece'] ?? data['idNaturePiece'])?.toString(),
+          'idNature': natureLabel,
           'idNumber': (data['idNumber'] ?? data['numeroPiece'])?.toString(),
           'idValidity': (data['idValidity'] ?? data['dateValiditePiece'])?.toString(),
         };
@@ -248,7 +286,8 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
     try {
       final repo = ref.read(simReactivationRepositoryProvider);
       final resp = await repo.reactivateSim(
-        newMsisdn: _ctrls['newSerial']!.text.trim(),
+        oldIccId: _clientData!['serial'] ?? '',
+        newIccId: _ctrls['newSerial']!.text.trim(),
         contactOne: _ctrls['frequent1']!.text.trim(),
         contactTwo: _ctrls['frequent2']!.text.trim().isEmpty ? null : _ctrls['frequent2']!.text.trim(),
         contactThree: _ctrls['frequent3']!.text.trim().isEmpty ? null : _ctrls['frequent3']!.text.trim(),
@@ -272,7 +311,7 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
       await showAppMessageDialog(
         context,
         title: l10n.sim_react_error_title,
-        message: e.toString(),
+        message: e.toString().replaceAll('Exception: ', ''),
         type: AppMessageType.error,
       );
     }
@@ -342,7 +381,7 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
             Expanded(child: OutlinedButton(
                 onPressed: () => _goToStep(_currentStep - 1),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: theme.dividerColor),
+                  side: BorderSide(color: theme.dividerColor, width: 1),
                   minimumSize: const Size.fromHeight(btnHeight),
                   shape: RoundedRectangleBorder(borderRadius: borderRadius),
                 ),

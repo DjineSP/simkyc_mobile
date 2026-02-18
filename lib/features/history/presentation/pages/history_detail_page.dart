@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/string_utils.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 import '../../domain/entities/history_detail.dart';
 import '../../domain/entities/history_item.dart';
@@ -54,7 +55,8 @@ class HistoryDetailPage extends StatelessWidget {
                   isDark: isDark,
                   children: [
                     _buildInfoRow(l10n.history_detail_label_op_id, detail.id, isCode: true),
-                    _buildInfoRow(l10n.history_detail_label_op_target, detail.msisdn, isCode: true),
+                    _buildInfoRow(l10n.history_detail_label_op_serial, detail.msisdn, isCode: true),
+                    _buildInfoRow(l10n.history_detail_label_op_target, StringUtils.formatPhone(detail.numeroTelephoneClient ?? ''), isCode: true, isBold: true),
                     _buildInfoRow(l10n.history_detail_label_op_date, _formatDateTime(detail.dateActivation ?? detail.editDate ?? detail.createDate)),
                   ],
                 ),
@@ -92,7 +94,10 @@ class HistoryDetailPage extends StatelessWidget {
                   icon: Icons.badge_outlined,
                   isDark: isDark,
                   children: [
-                    _buildInfoRow(l10n.history_detail_label_id_type, detail.idNaturePiece?.toString() ?? l10n.history_detail_value_unspecified),
+                    _buildInfoRow(
+                      l10n.history_detail_label_id_type,
+                      detail.libelleNaturePiece ?? l10n.history_detail_value_unspecified
+                    ),
                     _buildInfoRow(l10n.history_detail_label_id_number, detail.numeroPiece ?? '-', isCode: true),
                     _buildInfoRow(l10n.history_detail_label_id_expire, _formatDate(detail.dateValiditePiece)),
                   ],
@@ -204,7 +209,7 @@ class HistoryDetailPage extends StatelessWidget {
                 fontWeight: isBold ? FontWeight.bold : FontWeight.w500, 
                 fontSize: 14,
                 fontFamily: isCode ? 'Monospace' : null,
-                color: isBold ? AppColors.primary : null,
+                color: isBold ? null : null,
               ),
               textAlign: TextAlign.end,
             ),

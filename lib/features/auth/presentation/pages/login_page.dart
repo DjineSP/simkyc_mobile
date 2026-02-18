@@ -28,6 +28,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _rememberMe = false;
   String? _loginError;
   String? _passError;
+  String? _generalError;
 
   @override
   void initState() {
@@ -37,7 +38,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ref.read(authProvider.future).then((user) {
         if (!mounted) return;
         final rememberMe = ref.read(authProvider.notifier).getRememberMe();
-        final savedLogin = user.login;
+        final savedLogin = ref.read(authProvider.notifier).getLastLogin();
         setState(() => _rememberMe = rememberMe);
         if (rememberMe && savedLogin.isNotEmpty) {
           _loginCtrl.text = savedLogin;
@@ -62,7 +63,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (login.isEmpty) {
       setState(() {
-        _loginError = l10n.auth_error_invalid_phone;
+        _loginError = l10n.auth_error_login_required;
         _passError = null;
       });
       _loginFocus.requestFocus();
@@ -81,31 +82,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     setState(() {
       _loginError = null;
       _passError = null;
+      _generalError = null;
     });
 
     try {
       await ref.read(authProvider.notifier).signIn(login, pass, rememberMe: _rememberMe);
       if (!mounted) return;
 
-      final user = ref.read(authProvider).asData?.value;
+      final authState = ref.read(authProvider);
+
+      if (authState.hasError) {
+        final error = authState.error;
+        setState(() {
+          if (error.toString().contains('Bad Credentials')) {
+            _generalError = l10n.auth_error_bad_credentials;
+          } else {
+            _generalError = l10n.auth_error_generic;
+          }
+        });
+        return;
+      }
+
+      final user = authState.asData?.value;
       if (user?.isAuthenticated == true) {
         context.go(Routes.home);
       } else {
-        await showAppMessageDialog(
-          context,
-          title: l10n.common_error_title,
-          message: l10n.auth_error_auth_failed,
-          type: AppMessageType.error,
-        );
+        setState(() {
+          _generalError = l10n.auth_error_bad_credentials;
+        });
       }
     } catch (e) {
       if (!mounted) return;
-      await showAppMessageDialog(
-        context,
-        title: l10n.common_error_title,
-        message: e.toString(),
-        type: AppMessageType.error,
-      );
+      setState(() {
+        if (e.toString().contains('Bad Credentials')) {
+          _generalError = l10n.auth_error_bad_credentials;
+        } else {
+          _generalError = l10n.auth_error_generic;
+        }
+      });
     }
   }
 
@@ -150,21 +164,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           passFocus: _passFocus,
                           loginError: _loginError,
                           passError: _passError,
+                          generalError: _generalError,
                           obscure: _obscure,
                           isLoading: isLoading,
-                          onLoginChanged: (_) => setState(() => _loginError = null),
+                          onLoginChanged: (_) => setState(() {
+                            _loginError = null;
+                            _generalError = null;
+                          }),
                           rememberMe: _rememberMe,
                           onRememberMeChanged: (v) => setState(() => _rememberMe = v),
                           onToggleObscure: () => setState(() => _obscure = !_obscure),
                           onSignIn: () => _handleSignIn(),
-                          onForgotPassword: () => showAppMessageDialog(context,
-                              title: l10n.common_info_title,
-                              message: l10n.auth_forgot_password_dialog_body,
-                              type: AppMessageType.info),
-                          onContactAdmin: () => showAppMessageDialog(context,
-                              title: l10n.auth_contact_admin_dialog_title,
-                              message: l10n.auth_contact_admin_dialog_body,
-                              type: AppMessageType.info),
                         ),
                       ),
                     ),

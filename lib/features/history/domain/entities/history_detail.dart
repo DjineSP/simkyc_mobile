@@ -11,6 +11,7 @@ class HistoryDetail {
   final int? createCodeUser;
   final int? editCodeUser;
   final int? idNaturePiece;
+  final String? libelleNaturePiece;
   final String? idFrontImage;
   final String? idBackImage;
   final String? noms;
@@ -37,6 +38,7 @@ class HistoryDetail {
     this.createCodeUser,
     this.editCodeUser,
     this.idNaturePiece,
+    this.libelleNaturePiece,
     this.idFrontImage,
     this.idBackImage,
     this.noms,
@@ -64,7 +66,8 @@ class HistoryDetail {
       editDate: json['editDate'] != null ? DateTime.tryParse(json['editDate']) : null,
       createCodeUser: json['createCodeUser'],
       editCodeUser: json['editCodeUser'],
-      idNaturePiece: json['idNaturePiece'],
+      idNaturePiece: json['idNaturePiece'] ?? json['iD_Nature_Piece'],
+      libelleNaturePiece: json['nature_Piece'],
       idFrontImage: json['idFrontImage'],
       idBackImage: json['idBackImage'],
       noms: json['noms'],

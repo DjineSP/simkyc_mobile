@@ -287,11 +287,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: () async {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           final confirm = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text(l10n.profile_logout),
-              content: Text(l10n.profile_logout_dialog_body),
+              backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                l10n.profile_logout,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? Colors.white : Colors.black),
+              ),
+              content: Text(
+                l10n.profile_logout_dialog_body,
+                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),

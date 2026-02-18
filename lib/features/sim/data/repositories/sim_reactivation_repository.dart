@@ -63,6 +63,16 @@ class SimReactivationRepository {
           throw Exception(msg);
         }
       }
+      
+      if (e.response?.data is String) {
+         final raw = e.response?.data as String;
+         if (raw.isNotEmpty) throw Exception(raw);
+      }
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 404) throw Exception("Numéro de téléphone introuvable ou inéligible");
+      if (statusCode == 500) throw Exception("Erreur serveur lors de la recherche du client");
+      
       throw Exception(e.message ?? 'Erreur réseau');
     }
   }
@@ -94,71 +104,83 @@ class SimReactivationRepository {
   //   };
   // }
 
+  Future<Map<String, dynamic>> reactivateSim({
+    required String oldIccId,
+    required String newIccId,
+    required String contactOne,
+    String? contactTwo,
+    String? contactThree,
+  }) async {
+    try {
+      final response = await ApiClient.instance.dio.post(
+        '/api/Reactivation_Sim',
+        data: {
+          'old_ICC_ID': oldIccId,
+          'new_ICC_ID': newIccId,
+          'contact_One': contactOne,
+          'contact_Two': contactTwo,
+          'contact_Three': contactThree,
+        },
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw Exception('Réponse backend invalide');
+      }
+
+      final dynamic result = data['result'] ?? data['success'] ?? data['ok'];
+      final bool isOk = result is bool ? result : true;
+      final String? message = (data['message'] ?? data['error'] ?? data['detail'])?.toString();
+
+      if (!isOk) {
+        throw Exception(message ?? 'Réactivation échouée');
+      }
+
+      return data;
+    } on DioException catch (e) {
+      final responseData = e.response?.data;
+      if (responseData is Map<String, dynamic>) {
+        final msg = (responseData['message'] ?? responseData['error'] ?? responseData['detail'])?.toString();
+        if (msg != null && msg.isNotEmpty) {
+          throw Exception(msg);
+        }
+      }
+
+      if (e.response?.data is String) {
+         final raw = e.response?.data as String;
+         if (raw.isNotEmpty) throw Exception(raw);
+      }
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 400) throw Exception("Données de réactivation invalides");
+      if (statusCode == 500) throw Exception("Erreur serveur lors de la réactivation");
+      
+      throw Exception(e.message ?? 'Erreur réseau');
+    }
+  }
+
   // Future<Map<String, dynamic>> reactivateSim({
   //   required String newMsisdn,
   //   String? contactOne,
   //   String? contactTwo,
   //   String? contactThree,
   // }) async {
-  //   try {
-  //     final response = await ApiClient.instance.dio.post(
-  //       _kReactivatePath,
-  //       data: {
-  //         'newMsisdn': newMsisdn,
-  //         'contactOne': contactOne,
-  //         'contactTwo': contactTwo,
-  //         'contactThree': contactThree,
-  //       },
-  //     );
-
-  //     final data = response.data;
-  //     if (data is! Map<String, dynamic>) {
-  //       throw Exception('Réponse backend invalide');
-  //     }
-
-  //     final dynamic result = data['result'] ?? data['success'] ?? data['ok'];
-  //     final bool isOk = result is bool ? result : true;
-  //     final String? message = (data['message'] ?? data['error'] ?? data['detail'])?.toString();
-
-  //     if (!isOk) {
-  //       throw Exception(message ?? 'Réactivation échouée');
-  //     }
-
-  //     return data;
-  //   } on DioException catch (e) {
-  //     final responseData = e.response?.data;
-  //     if (responseData is Map<String, dynamic>) {
-  //       final msg = (responseData['message'] ?? responseData['error'] ?? responseData['detail'])?.toString();
-  //       if (msg != null && msg.isNotEmpty) {
-  //         throw Exception(msg);
-  //       }
-  //     }
-  //     throw Exception(e.message ?? 'Erreur réseau');
+  //   await Future.delayed(const Duration(seconds: 1));
+  //   if (newMsisdn.trim().isEmpty) {
+  //     throw Exception('Nouveau MSISDN requis');
   //   }
+  //   return {
+  //     'result': true,
+  //     'message': 'Réactivation effectuée avec succès (simulation)',
+  //     'data': {
+  //       'newMsisdn': newMsisdn,
+  //       'contactOne': contactOne,
+  //       'contactTwo': contactTwo,
+  //       'contactThree': contactThree,
+  //       'updatedAt': DateTime.now().toIso8601String(),
+  //     },
+  //   };
   // }
-
-  Future<Map<String, dynamic>> reactivateSim({
-    required String newMsisdn,
-    String? contactOne,
-    String? contactTwo,
-    String? contactThree,
-  }) async {
-    await Future.delayed(const Duration(seconds: 1));
-    if (newMsisdn.trim().isEmpty) {
-      throw Exception('Nouveau MSISDN requis');
-    }
-    return {
-      'result': true,
-      'message': 'Réactivation effectuée avec succès (simulation)',
-      'data': {
-        'newMsisdn': newMsisdn,
-        'contactOne': contactOne,
-        'contactTwo': contactTwo,
-        'contactThree': contactThree,
-        'updatedAt': DateTime.now().toIso8601String(),
-      },
-    };
-  }
 }
 
 final simReactivationRepositoryProvider = Provider<SimReactivationRepository>((ref) => SimReactivationRepository());

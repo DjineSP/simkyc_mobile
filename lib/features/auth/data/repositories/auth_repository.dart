@@ -48,6 +48,9 @@ class AuthRepository {
       return data;
 
     } on DioException catch (e) {
+      if (e.response != null && (e.response!.statusCode == 400 || e.response!.statusCode == 401)) {
+        throw Exception('Bad Credentials');
+      }
       final responseData = e.response?.data;
       if (responseData is Map<String, dynamic>) {
         final msg = responseData['message']?.toString();

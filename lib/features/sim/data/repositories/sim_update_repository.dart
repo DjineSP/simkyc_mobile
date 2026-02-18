@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -70,6 +71,16 @@ class SimUpdateRepository {
           throw Exception(msg);
         }
       }
+
+      if (e.response?.data is String) {
+         final raw = e.response?.data as String;
+         if (raw.isNotEmpty) throw Exception(raw);
+      }
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 404) throw Exception("Abonné introuvable");
+      if (statusCode == 500) throw Exception("Erreur serveur lors de la recherche");
+      
       throw Exception(e.message ?? 'Erreur réseau');
     }
   }
@@ -101,24 +112,60 @@ class SimUpdateRepository {
   //   };
   // }
 
+  String? _toBackendDate(dynamic dateStr) {
+    if (dateStr == null || dateStr.toString().isEmpty) return null;
+    try {
+      // Si format dd/MM/yyyy
+      if (dateStr.toString().contains('/')) {
+        final parts = dateStr.toString().split('/');
+        if (parts.length == 3) {
+           // yyyy-MM-dd
+           return '${parts[2]}-${parts[1]}-${parts[0]}';
+        }
+      }
+      // Sinon on renvoie tel quel (déjà yyyy-MM-dd ou autre)
+      return dateStr.toString();
+    } catch (_) {
+      return dateStr.toString();
+    }
+  }
+
   Future<Map<String, dynamic>> updateClient({
+    required int idActivationSim,
     required Map<String, dynamic> fields,
     required File idFront,
     required File idBack,
   }) async {
     try {
-      final formData = FormData.fromMap({
-        ...fields,
-        'idFront': await MultipartFile.fromFile(idFront.path, filename: idFront.uri.pathSegments.last),
-        'idBack': await MultipartFile.fromFile(idBack.path, filename: idBack.uri.pathSegments.last),
-      });
+      final String base64Front = base64Encode(await idFront.readAsBytes());
+      final String base64Back = base64Encode(await idBack.readAsBytes());
+
+      // Construction du payload exact demandé
+      final Map<String, dynamic> payload = {
+        "idActivationSim": idActivationSim,
+        "numeroTelephoneClient": fields['telephone'] ?? fields['msisdn'],
+        "dateMiseAJour": DateTime.now().toIso8601String(),
+        "etat": 0,
+        "saveByPos": true,
+        "idNaturePiece": fields['idNaturePiece'] ?? 0,
+        "idFrontImage": base64Front,
+        "idBackImage": base64Back,
+        "noms": fields['nom'],
+        "prenoms": fields['prenom'],
+        "sexe": fields['sexe'], // bool
+        "dateNaissance": _toBackendDate(fields['dateNaissance']),
+        "lieuNaissance": fields['lieuNaissance'],
+        "profession": fields['profession'],
+        "dateValiditePiece": _toBackendDate(fields['dateValiditePiece']),
+        "numeroPiece": fields['numeroPiece'],
+        "adressePostale": fields['adressePostale'],
+        "mail": fields['mail'],
+        "adresseGeographique": fields['adresseGeo']
+      };
 
       final response = await ApiClient.instance.dio.post(
         _kUpdatePath,
-        data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        data: payload,
       );
 
       final data = response.data;
@@ -143,6 +190,17 @@ class SimUpdateRepository {
           throw Exception(msg);
         }
       }
+
+      if (e.response?.data is String) {
+         final raw = e.response?.data as String;
+         if (raw.isNotEmpty) throw Exception(raw);
+      }
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 400) throw Exception("Données de mise à jour invalides");
+      if (statusCode == 413) throw Exception("Images trop volumineuses");
+      if (statusCode == 500) throw Exception("Erreur serveur lors de la mise à jour");
+      
       throw Exception(e.message ?? 'Erreur réseau');
     }
   }

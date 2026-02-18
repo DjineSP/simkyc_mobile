@@ -8,6 +8,8 @@ import '../../../../l10n/gen/app_localizations.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../providers/history_provider.dart';
 import '../../domain/entities/history_item.dart';
+import '../../domain/entities/history_item.dart';
+import '../../../../core/utils/string_utils.dart';
 import 'history_detail_page.dart';
 
 class HistoryManagementPage extends ConsumerStatefulWidget {
@@ -355,11 +357,11 @@ class _HistoryItemCard extends StatelessWidget {
         break;
       case HistoryActionType.reactivation:
         icon = Icons.refresh_rounded;
-        color = Colors.orange;
+        color = Colors.blue;
         break;
       case HistoryActionType.update:
         icon = Icons.edit_outlined;
-        color = Colors.blue;
+        color = Colors.orange;
         break;
     }
 
@@ -402,15 +404,19 @@ class _HistoryItemCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.msisdn,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                          fontFamily: 'Monospace',
-                          letterSpacing: 0.5,
+                        StringUtils.formatPhone(
+                          item.details?.numeroTelephoneClient?.isNotEmpty == true
+                              ? item.details!.numeroTelephoneClient!
+                              : item.msisdn
                         ),
-                      ),
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                            fontFamily: 'Monospace',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       const SizedBox(height: 4),
                       Text(
                         item.clientName,

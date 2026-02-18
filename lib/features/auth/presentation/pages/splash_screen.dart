@@ -20,36 +20,51 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
+  @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () async {
-      if (!mounted) return;
+    _initApp();
+  }
 
-      final user = await ref.read(authProvider.future);
-      if (!mounted) return;
+  Future<void> _initApp() async {
+    // Run minimum delay and data loading in parallel
+    final results = await Future.wait([
+      Future.delayed(const Duration(milliseconds: 1500)), // Min display time
+      ref.read(authProvider.future), // Load user data
+    ]);
 
-      final biometricEnabled = ref.read(biometricEnabledProvider);
-      if (user.isAuthenticated && biometricEnabled) {
+    if (!mounted) return;
+
+    final user = results[1] as dynamic; // UserModel
+    final biometricEnabled = ref.read(biometricEnabledProvider);
+    
+    // Check authentication status
+    if (user.isAuthenticated) {
+      // 1. Biometric check if enabled
+      if (biometricEnabled) {
         final ok = await BiometricAuthService.instance.authenticate(
           reason: 'Veuillez vous authentifier pour continuer',
         );
         if (!mounted) return;
-
+        
         if (ok) {
           context.go(Routes.home);
         } else {
-          context.go(Routes.login);
+          // Biometric failed or cancelled, go to login
+           context.go(Routes.login);
         }
         return;
       }
-
-      if (user.isAuthenticated && ref.read(authProvider.notifier).getRememberMe()) {
+      
+      // 2. Remember Me check
+      if (ref.read(authProvider.notifier).getRememberMe()) {
         context.go(Routes.home);
         return;
       }
+    }
 
-      context.go(Routes.login);
-    });
+    // Default: Go to login
+    context.go(Routes.login);
   }
 
   @override

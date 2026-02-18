@@ -58,10 +58,10 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
     HistoryActionType type;
     switch (typeCode) {
       case 1:
-        type = HistoryActionType.reactivation;
+        type = HistoryActionType.update;
         break;
       case 2:
-        type = HistoryActionType.update;
+        type = HistoryActionType.reactivation;
         break;
       case 0:
       default:
@@ -99,6 +99,7 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
       numeroTelephoneClient: json['numero_Telephone_Client'],
       mail: json['mail'],
       adresseGeographique: json['adresse_geographique'],
+      libelleNaturePiece: json['nature_Piece'],
       // Mapper les autres champs si présents ou nécessaires
       // idNaturePiece, idFrontImage, etc ne sont pas dans l'exemple JSON mais peuvent être null
     );

@@ -13,6 +13,7 @@ class StepSimDetails extends ConsumerWidget {
   final FocusNode serialFocus;
   final String? msisdnError;
   final String? serialError;
+  final VoidCallback onFetchMsisdn;
 
   const StepSimDetails({
     super.key,
@@ -22,6 +23,7 @@ class StepSimDetails extends ConsumerWidget {
     required this.serialFocus,
     this.msisdnError,
     this.serialError,
+    required this.onFetchMsisdn,
   });
 
   // --- LOGIQUE DU SCANNER ---
@@ -97,11 +99,29 @@ class StepSimDetails extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              
+              // Bouton "Obtenir MSISDN lié"
+              if (!hasMsisdn)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onFetchMsisdn,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: const BorderSide(color: AppColors.success),
+                        foregroundColor: AppColors.success,
+                      ),
+                      icon: const Icon(Icons.download_rounded),
+                      label: Text(l10n.step_sim_btn_fetch, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
 
               // Feedback visuel (Badge)
-              hasMsisdn
-                  ? _buildSuccessBadge(msisdn.text, theme, l10n)
-                  : _buildInfoBadge(theme, l10n),
+              if (hasMsisdn) _buildSuccessBadge(msisdn.text, theme, l10n),
 
               if (msisdnError != null)
                 Padding(
@@ -131,41 +151,25 @@ class StepSimDetails extends ConsumerWidget {
         children: [
           const Icon(Icons.check_circle_rounded, color: Colors.green, size: 22),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                  l10n.step_sim_success,
-                  style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)
-              ),
-              Text(
-                  phone,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface)
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoBadge(ThemeData theme, var l10n) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.dividerColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded, color: theme.colorScheme.onSurface.withOpacity(0.4), size: 20),
-          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-                l10n.step_sim_info,
-                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5), fontStyle: FontStyle.italic)
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    l10n.step_sim_success,
+                    style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)
+                ),
+                Text(
+                    phone,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface)
+                ),
+              ],
             ),
+          ),
+          IconButton(
+            onPressed: () => msisdn.clear(),
+            icon: Icon(Icons.close_rounded, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+            tooltip: "Effacer",
           ),
         ],
       ),

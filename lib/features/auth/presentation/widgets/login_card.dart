@@ -9,6 +9,7 @@ class LoginCard extends StatelessWidget {
   final FocusNode passFocus;
   final String? loginError;
   final String? passError;
+  final String? generalError;
   final bool obscure;
   final bool isLoading;
   final Function(String) onLoginChanged;
@@ -16,8 +17,6 @@ class LoginCard extends StatelessWidget {
   final ValueChanged<bool> onRememberMeChanged;
   final VoidCallback onToggleObscure;
   final VoidCallback onSignIn;
-  final VoidCallback onForgotPassword;
-  final VoidCallback onContactAdmin;
 
   const LoginCard({
     super.key,
@@ -27,6 +26,7 @@ class LoginCard extends StatelessWidget {
     required this.passFocus,
     this.loginError,
     this.passError,
+    this.generalError,
     required this.obscure,
     this.isLoading = false,
     required this.onLoginChanged,
@@ -34,8 +34,6 @@ class LoginCard extends StatelessWidget {
     required this.onRememberMeChanged,
     required this.onToggleObscure,
     required this.onSignIn,
-    required this.onForgotPassword,
-    required this.onContactAdmin,
   });
 
   @override
@@ -75,13 +73,13 @@ class LoginCard extends StatelessWidget {
             style: TextStyle(color: scheme.onSurface),
             decoration: _inputStyle(
               theme: theme,
-              hint: 'Login',
+              hint: l10n.auth_field_login,
               icon: Icons.person_outline,
               error: loginError,
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           _label(l10n.auth_field_password, theme),
           const SizedBox(height: 8),
@@ -100,17 +98,20 @@ class LoginCard extends StatelessWidget {
               obscure: obscure,
             ),
           ),
-
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onForgotPassword,
-              child: Text(
-                l10n.auth_forgot_password,
-                style: TextStyle(fontSize: 12, color: scheme.primary, fontWeight: FontWeight.bold),
+          if (generalError != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              generalError!,
+              style: TextStyle(
+                color: scheme.error,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
+              textAlign: TextAlign.start,
             ),
-          ),
+          ] else ...[
+            const SizedBox(height: 12),
+          ],
 
           Row(
             children: [
@@ -128,7 +129,6 @@ class LoginCard extends StatelessWidget {
           ),
 
           SizedBox(
-            height: 54,
             child: ElevatedButton(
               onPressed: isLoading ? null : onSignIn,
               style: ElevatedButton.styleFrom(
@@ -157,31 +157,11 @@ class LoginCard extends StatelessWidget {
             ),
           ),
 
+
+
           const SizedBox(height: 20),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                l10n.auth_no_account,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: scheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-              TextButton(
-                onPressed: onContactAdmin,
-                child: Text(
-                  l10n.auth_contact_admin,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
+
         ],
       ),
     );
@@ -212,9 +192,9 @@ class LoginCard extends StatelessWidget {
                 )
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Cellcom',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.red),
+            Text(
+              l10n.app_name,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.red),
             ),
           ],
         ),

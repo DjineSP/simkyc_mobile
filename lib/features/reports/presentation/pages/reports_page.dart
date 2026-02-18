@@ -94,15 +94,36 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               Expanded(
                 child: Skeletonizer(
                   enabled: isLoading,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    children: [
-                      _ReasonRow(reason: l10n.reports_reason_customer, count: data?.reasons[ReportReasonType.customer] ?? 0),
-                      _ReasonRow(reason: l10n.reports_reason_sim_change, count: data?.reasons[ReportReasonType.simChange] ?? 0),
-                      _ReasonRow(reason: l10n.reports_reason_tech, count: data?.reasons[ReportReasonType.tech] ?? 0),
-                      _ReasonRow(reason: l10n.reports_reason_fraud, count: data?.reasons[ReportReasonType.fraud] ?? 0),
-                      _ReasonRow(reason: l10n.reports_reason_other, count: data?.reasons[ReportReasonType.other] ?? 0),
-                    ],
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Calcul total des raisons pour le ratio
+                      int totalReasons = 0;
+                      data?.reasons.forEach((_, v) => totalReasons += v);
+
+                      // Responsive : Ajuster le nombre de colonnes selon la largeur
+                      int crossAxisCount = 2;
+                      double width = constraints.maxWidth;
+                      if (width >= 600 && width < 900) {
+                        crossAxisCount = 3;
+                      } else if (width >= 900) {
+                        crossAxisCount = 4;
+                      }
+                      
+                      return GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.85, // Plus de hauteur pour le texte
+                        children: [
+                          _GaugeCard(label: l10n.reports_reason_customer, value: data?.reasons[ReportReasonType.customer] ?? 0, total: totalReasons, color: Colors.purple),
+                          _GaugeCard(label: l10n.reports_reason_sim_change, value: data?.reasons[ReportReasonType.simChange] ?? 0, total: totalReasons, color: Colors.orange),
+                          _GaugeCard(label: l10n.reports_reason_tech, value: data?.reasons[ReportReasonType.tech] ?? 0, total: totalReasons, color: Colors.blueGrey),
+                          _GaugeCard(label: l10n.reports_reason_fraud, value: data?.reasons[ReportReasonType.fraud] ?? 0, total: totalReasons, color: Colors.redAccent),
+                          _GaugeCard(label: l10n.reports_reason_other, value: data?.reasons[ReportReasonType.other] ?? 0, total: totalReasons, color: Colors.grey),
+                        ],
+                      );
+                    }
                   ),
                 ),
               ),
@@ -118,15 +139,19 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
-          Text(
-            l10n.reports_title,
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              color: theme.colorScheme.onSurface,
+          Expanded(
+            child: Text(
+              l10n.reports_title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           DropdownButton<String>(
             value: _periodValue,
             underline: const SizedBox(),
@@ -247,46 +272,107 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _ReasonRow extends StatelessWidget {
-  final String reason;
-  final int count;
+class _GaugeCard extends StatelessWidget {
+  final String label;
+  final int value;
+  final int total;
+  final Color color;
 
-  const _ReasonRow({required this.reason, required this.count});
+  const _GaugeCard({
+    required this.label,
+    required this.value,
+    required this.total,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Eviter division par zéro
+    final double percentage = total > 0 ? (value / total) : 0.0;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
         border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: Text(
-              reason,
-              style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface),
+          AspectRatio(
+            aspectRatio: 1,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Fond de la jauge
+                SizedBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: CircularProgressIndicator(
+                    value: 1.0,
+                    strokeWidth: 8,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isDark ? Colors.white10 : Colors.grey.shade100,
+                    ),
+                    strokeCap: StrokeCap.round,
+                  ),
+                ),
+                // Valeur animée
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: percentage),
+                  duration: const Duration(milliseconds: 1500),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, val, _) {
+                    return SizedBox(
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: CircularProgressIndicator(
+                        value: val,
+                        strokeWidth: 8,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    );
+                  },
+                ),
+                // Texte central
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$value',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '$count',
-              style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primary),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],

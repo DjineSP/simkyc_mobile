@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'CUSTOMER MANAGEMENT AND\nSIM-KYC CARDS\nBACK-OFFICE'**
   String get splash_subtitle;
 
+  /// No description provided for @app_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Cellcom'**
+  String get app_name;
+
   /// No description provided for @auth_login_title.
   ///
   /// In en, this message translates to:
@@ -152,6 +158,12 @@ abstract class AppLocalizations {
   /// **'Invalid format (ex: 6XX XX XX XX)'**
   String get auth_error_invalid_phone;
 
+  /// No description provided for @auth_error_login_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Login required'**
+  String get auth_error_login_required;
+
   /// No description provided for @auth_error_password_required.
   ///
   /// In en, this message translates to:
@@ -164,11 +176,17 @@ abstract class AppLocalizations {
   /// **'Authentication failed.'**
   String get auth_error_auth_failed;
 
-  /// No description provided for @auth_forgot_password.
+  /// No description provided for @auth_error_bad_credentials.
   ///
   /// In en, this message translates to:
-  /// **'Forgot password?'**
-  String get auth_forgot_password;
+  /// **'Invalid Login or Password'**
+  String get auth_error_bad_credentials;
+
+  /// No description provided for @auth_error_generic.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get auth_error_generic;
 
   /// No description provided for @auth_forgot_password_dialog_body.
   ///
@@ -1337,8 +1355,20 @@ abstract class AppLocalizations {
   /// No description provided for @step_sim_serial_hint.
   ///
   /// In en, this message translates to:
-  /// **'Scan or enter the number'**
+  /// **'Scan or enter serial number'**
   String get step_sim_serial_hint;
+
+  /// No description provided for @step_sim_btn_fetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Linked MSISDN'**
+  String get step_sim_btn_fetch;
+
+  /// No description provided for @step_sim_error_msisdn_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fetch the MSISDN before continuing'**
+  String get step_sim_error_msisdn_required;
 
   /// No description provided for @step_sim_success.
   ///
@@ -1627,6 +1657,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transaction ID'**
   String get history_detail_label_op_id;
+
+  /// No description provided for @history_detail_label_op_serial.
+  ///
+  /// In en, this message translates to:
+  /// **'Serial Number'**
+  String get history_detail_label_op_serial;
 
   /// No description provided for @history_detail_label_op_target.
   ///

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/sim/presentation/pages/components/activation_helpers.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../core/constants/app_colors.dart';
 import '../providers/app_settings_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../shared/widgets/app_message_dialog.dart';
@@ -166,6 +167,9 @@ class OperationValidator {
               );
 
               return AlertDialog(
+                backgroundColor: theme.brightness == Brightness.dark ? AppColors.darkSurface : Colors.white,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 6),
                 content: ConstrainedBox(

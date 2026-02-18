@@ -13,6 +13,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'GESTION DES CLIENTS ET DES\nCARTE SIM-KYC\nBACK-OFFICE';
 
   @override
+  String get app_name => 'Cellcom';
+
+  @override
   String get auth_login_title => 'Connexion';
 
   @override
@@ -37,13 +40,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get auth_error_invalid_phone => 'Format invalide (ex: 6XX XX XX XX)';
 
   @override
+  String get auth_error_login_required => 'Login requis';
+
+  @override
   String get auth_error_password_required => 'Mot de passe requis';
 
   @override
   String get auth_error_auth_failed => 'Authentification échouée.';
 
   @override
-  String get auth_forgot_password => 'Mot de passe oublié ?';
+  String get auth_error_bad_credentials => 'Login ou Mot de passe incorrect';
+
+  @override
+  String get auth_error_generic => 'Une Erreur s\'est produite';
 
   @override
   String get auth_forgot_password_dialog_body => 'Contactez l\'admin.';
@@ -648,7 +657,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get step_sim_serial_label => 'Numéro de série de la SIM *';
 
   @override
-  String get step_sim_serial_hint => 'Scanner ou entrer le numéro';
+  String get step_sim_serial_hint => 'Scanner ou entrer le numéro de serie';
+
+  @override
+  String get step_sim_btn_fetch => 'Obtenir MSISDN lié';
+
+  @override
+  String get step_sim_error_msisdn_required =>
+      'Veuillez récupérer le MSISDN avant de continuer';
 
   @override
   String get step_sim_success => 'MSISDN lié avec succès';
@@ -800,6 +816,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get history_detail_label_op_id => 'ID Transaction';
+
+  @override
+  String get history_detail_label_op_serial => 'Numéro de Série';
 
   @override
   String get history_detail_label_op_target => 'MSISDN Cible';

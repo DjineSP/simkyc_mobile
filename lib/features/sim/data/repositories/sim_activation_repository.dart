@@ -29,7 +29,19 @@ class SimActivationRepository {
     } on DioException catch (e) {
       // Récupération du message d'erreur simplifié
       final msg = (e.response?.data is Map) ? e.response?.data['message'] : null;
-      throw Exception(msg ?? e.message ?? 'Erreur lors de la récupération des natures');
+      if (msg != null) throw Exception(msg);
+      
+      if (e.response?.data is String) {
+         final raw = e.response?.data as String;
+         if (raw.isNotEmpty) throw Exception(raw);
+      }
+      
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 500) throw Exception("Erreur serveur interne lors de la récupération des natures");
+      if (statusCode == 404) throw Exception("Service des natures de pièces indisponible");
+      
+      throw Exception(e.message ?? 'Erreur lors de la récupération des natures');
     }
   }
 
@@ -140,7 +152,17 @@ class SimActivationRepository {
           throw Exception(msg);
         }
       }
-      throw Exception(e.message ?? 'Erreur réseau');
+
+      if (e.response?.data is String) {
+         final raw = e.response?.data as String;
+         if (raw.isNotEmpty) throw Exception(raw);
+      }
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 400) throw Exception("Données d'activation invalides");
+      if (statusCode == 500) throw Exception("Erreur serveur lors de l'activation");
+      
+      throw Exception(e.message ?? 'Erreur réseau lors de l\'activation');
     }
   }
 

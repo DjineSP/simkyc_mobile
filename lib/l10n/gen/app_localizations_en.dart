@@ -13,6 +13,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'CUSTOMER MANAGEMENT AND\nSIM-KYC CARDS\nBACK-OFFICE';
 
   @override
+  String get app_name => 'Cellcom';
+
+  @override
   String get auth_login_title => 'Login';
 
   @override
@@ -37,13 +40,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_error_invalid_phone => 'Invalid format (ex: 6XX XX XX XX)';
 
   @override
+  String get auth_error_login_required => 'Login required';
+
+  @override
   String get auth_error_password_required => 'Password is required';
 
   @override
   String get auth_error_auth_failed => 'Authentication failed.';
 
   @override
-  String get auth_forgot_password => 'Forgot password?';
+  String get auth_error_bad_credentials => 'Invalid Login or Password';
+
+  @override
+  String get auth_error_generic => 'An error occurred';
 
   @override
   String get auth_forgot_password_dialog_body => 'Please contact the admin.';
@@ -646,7 +655,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get step_sim_serial_label => 'SIM serial number *';
 
   @override
-  String get step_sim_serial_hint => 'Scan or enter the number';
+  String get step_sim_serial_hint => 'Scan or enter serial number';
+
+  @override
+  String get step_sim_btn_fetch => 'Get Linked MSISDN';
+
+  @override
+  String get step_sim_error_msisdn_required =>
+      'Please fetch the MSISDN before continuing';
 
   @override
   String get step_sim_success => 'MSISDN linked successfully';
@@ -795,6 +811,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get history_detail_label_op_id => 'Transaction ID';
+
+  @override
+  String get history_detail_label_op_serial => 'Serial Number';
 
   @override
   String get history_detail_label_op_target => 'Target MSISDN';

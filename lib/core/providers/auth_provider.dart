@@ -7,10 +7,11 @@ import '../services/storage_service.dart';
 
 class AuthNotifier extends AsyncNotifier<UserModel> {
   static const _kUserTokenKey = 'user_token';
-  static const _kRefreshTokenKey = 'user_refresh_token'; // New
-  static const _kUserDataKey = 'user_data'; // New
+  static const _kRefreshTokenKey = 'user_refresh_token';
+  static const _kUserDataKey = 'user_data';
   static const _kUserPasswordKey = 'user_password';
   static const _kRememberMeKey = 'remember_me';
+  static const _kLastLoginKey = 'last_user_login';
 
   @override
   Future<UserModel> build() async {
@@ -57,6 +58,8 @@ class AuthNotifier extends AsyncNotifier<UserModel> {
       if (user.tokenData != null) {
         await StorageService.instance.secureWrite(_kUserTokenKey, user.tokenData!.accessToken);
         await StorageService.instance.secureWrite(_kRefreshTokenKey, user.tokenData!.refreshToken);
+        // Persist login for "Remember Me"
+        await StorageService.instance.write(_kLastLoginKey, login);
       }
 
       if (user.userData != null) {
@@ -71,6 +74,7 @@ class AuthNotifier extends AsyncNotifier<UserModel> {
   }
 
   bool getRememberMe() => StorageService.instance.readBool(_kRememberMeKey);
+  String getLastLogin() => StorageService.instance.read(_kLastLoginKey) ?? '';
 
   Future<void> logout() async {
     try {
