@@ -45,69 +45,44 @@ class SimActivationRepository {
     }
   }
 
-  // Future<List<Map<String, dynamic>>> fetchIdNatures() async {
-  //   await Future.delayed(const Duration(milliseconds: 500));
-    // return [
-    //   {'id': 1, 'libelle': 'CNI'},
-    //   {'id': 2, 'libelle': 'Passeport'},
-    //   {'id': 3, 'libelle': 'Carte de séjour'},
-    //   {'id': 4, 'libelle': 'Récépissé'},
-    //   {'id': 5, 'libelle': 'Permis de conduire'},
-    // ];
-  // }
-
-  // Future<String> fetchMsisdnFromSerial(String serial) async {
-  //   try {
-  //     final response = await ApiClient.instance.dio.post(
-  //       '/sim/msisdn',
-  //       data: {'serial': serial},
-  //     );
-
-  //     final data = response.data;
-  //     if (data is! Map<String, dynamic>) {
-  //       throw Exception('Réponse backend invalide');
-  //     }
-
-  //     final dynamic result = data['result'] ?? data['success'] ?? data['ok'];
-  //     final bool isOk = result is bool ? result : true;
-  //     final String? message = (data['message'] ?? data['error'] ?? data['detail'])?.toString();
-  //     final String? msisdn = data['msisdn']?.toString();
-
-  //     if (!isOk) {
-  //       throw Exception(message ?? 'Recherche MSISDN échouée');
-  //     }
-  //     if (msisdn == null || msisdn.isEmpty) {
-  //       throw Exception(message ?? 'MSISDN introuvable');
-  //     }
-
-  //     return msisdn;
-  //   } on DioException catch (e) {
-  //     final responseData = e.response?.data;
-  //     if (responseData is Map<String, dynamic>) {
-  //       final msg = (responseData['message'] ?? responseData['error'] ?? responseData['detail'])?.toString();
-  //       if (msg != null && msg.isNotEmpty) {
-  //         throw Exception(msg);
-  //       }
-  //     }
-  //     throw Exception(e.message ?? 'Erreur réseau');
-  //   }
-  // }
-
   Future<String> fetchMsisdnFromSerial(String serial) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (serial.trim().isEmpty) {
-      throw Exception('Numéro de série invalide');
+    try {
+
+      final response = await ApiClient.instance.dio.get(
+        '/api/Activation_Sim/GetMSISDN/$serial',
+        options: Options(responseType: ResponseType.plain),
+      );
+
+      final data = response.data?.toString();
+      
+      if (data == null || data.isEmpty) {
+        throw Exception('Réponse vide du serveur');
+      }
+
+      // Le serveur renvoie soit le MSISDN (ex: "658802241"), soit un message d'erreur
+      // On considère que c'est un MSISDN valide s'il ne contient que des chiffres (et éventuellement des espaces)
+      final cleanData = data.replaceAll(RegExp(r'\s+'), '');
+      if (RegExp(r'^\d+$').hasMatch(cleanData)) {
+         return cleanData;
+      }
+
+      // Sinon, c'est un message d'erreur texte (ex: "La carte SIM a été annulée...")
+      throw Exception(data);
+
+    } on DioException catch (e) {
+      if (e.response?.data != null) {
+         final raw = e.response?.data.toString();
+         if (raw != null && raw.isNotEmpty) {
+           throw Exception(raw);
+         }
+      }
+      
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 404) throw Exception("Numéro de série introuvable");
+      if (statusCode == 500) throw Exception("Erreur serveur lors de la récupération du MSISDN");
+      
+      throw Exception(e.message ?? 'Erreur lors de la récupération du MSISDN');
     }
-    if (serial.endsWith('000')) {
-      throw Exception('MSISDN introuvable');
-    }
-    final random = Random();
-    // Génère 8 chiffres aléatoires
-    String digits = '';
-    for (int i = 0; i < 8; i++) {
-      digits += random.nextInt(10).toString();
-    }
-    return '6$digits';
   }
 
   Future<Map<String, dynamic>> activateSim({
@@ -165,33 +140,6 @@ class SimActivationRepository {
       throw Exception(e.message ?? 'Erreur réseau lors de l\'activation');
     }
   }
-
-  // Future<Map<String, dynamic>> activateSim({
-  //   required Map<String, dynamic> fields,
-  //   required File idFront,
-  //   required File idBack,
-  // }) async {
-  //   await Future.delayed(const Duration(seconds: 1));
-  
-  //   if (!fields.containsKey('msisdn') || (fields['msisdn']?.toString().isEmpty ?? true)) {
-  //     throw Exception('MSISDN requis');
-  //   }
-  //   if (!idFront.existsSync() || !idBack.existsSync()) {
-  //     throw Exception('Photos de la pièce requises');
-  //   }
-  
-  //   return {
-  //     'result': true,
-  //     'message': 'Activation effectuée avec succès (simulation)',
-  //     'data': {
-  //       'activationId': 123456,
-  //       'msisdn': fields['msisdn'],
-  //       'serial': fields['serial'],
-  //       'status': 'ACTIVATED',
-  //       'date': DateTime.now().toIso8601String(),
-  //     },
-  //   };
-  // }
 }
 
 final simActivationRepositoryProvider = Provider<SimActivationRepository>((ref) => SimActivationRepository());

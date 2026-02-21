@@ -222,8 +222,9 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
         'numeroTelephoneClient': _ctrls['msisdn']!.text.trim(),
         'mail': _ctrls['email']!.text.trim(),
         'adresseGeographique': _ctrls['geo']!.text.trim(),
-        'msisdn': _ctrls['serial']!.text.trim(),
+        'msisdn': _ctrls['msisdn']!.text.trim(),
         'idNaturePiece': int.tryParse(_ctrls['idNature']!.text.trim()) ?? 0,
+        'numero_Serie': _ctrls['serial']!.text.trim(),
       };
 
       final resp = await repo.activateSim(fields: fields, idFront: idFront, idBack: idBack);

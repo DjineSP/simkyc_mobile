@@ -60,8 +60,7 @@ class SimUpdateRepository {
         'adresseGeo': item['adresseGeographique'],
         'dateNaissance': _formatDate(item['dateNaissance']),
         'dateValiditePiece': _formatDate(item['dateValiditePiece']),
-        'sexe': item['sexe'], // bool
-        // Conserver les autres champs bruts si besoin (idNaturePiece, numeroPiece, etc)
+        'sexe': item['sexe'],
       };
     } on DioException catch (e) {
       final responseData = e.response?.data;
@@ -84,33 +83,6 @@ class SimUpdateRepository {
       throw Exception(e.message ?? 'Erreur réseau');
     }
   }
-
-  // Future<Map<String, dynamic>> fetchActivationByPhone(String msisdn) async {
-  //   await Future.delayed(const Duration(milliseconds: 800));
-  //   if (msisdn.trim().isEmpty) {
-  //     throw Exception('Numéro de téléphone requis');
-  //   }
-  //   if (msisdn.endsWith('000')) {
-  //     throw Exception('Abonné introuvable');
-  //   }
-  //   return {
-  //     'msisdn': msisdn,
-  //     'nom': 'DJINE',
-  //     'prenom': 'SINTO PAFING',
-  //     'sexe': true,
-  //     'dateNaissance': '15/03/1990',
-  //     'lieuNaissance': 'Conakry',
-  //     'profession': 'Ingénieur',
-  //     'adresseGeo': 'Kaloum, Conakry',
-  //     'adressePostale': 'BP 1024 Conakry',
-  //     'mail': 'sinto.pafing@outlook.com',
-  //     'idNaturePiece': 2,
-  //     'numeroPiece': '123456789',
-  //     'dateValiditePiece': '20/12/2028',
-  //     'idFront': 'data:image/png;base64,SGVsbG8=',
-  //     'idBack': 'data:image/png;base64,V29ybGQ=',
-  //   };
-  // }
 
   String? _toBackendDate(dynamic dateStr) {
     if (dateStr == null || dateStr.toString().isEmpty) return null;
@@ -204,28 +176,6 @@ class SimUpdateRepository {
       throw Exception(e.message ?? 'Erreur réseau');
     }
   }
-
-  // Future<Map<String, dynamic>> updateClient({
-  //   required Map<String, dynamic> fields,
-  //   required File idFront,
-  //   required File idBack,
-  // }) async {
-  //   await Future.delayed(const Duration(seconds: 1));
-  //   if (!fields.containsKey('msisdn') || (fields['msisdn']?.toString().isEmpty ?? true)) {
-  //     throw Exception('MSISDN requis');
-  //   }
-  //   if (!idFront.existsSync() || !idBack.existsSync()) {
-  //     throw Exception('Photos de la pièce requises');
-  //   }
-  //   return {
-  //     'result': true,
-  //     'message': 'Mise à jour effectuée avec succès (simulation)',
-  //     'data': {
-  //       ...fields,
-  //       'updatedAt': DateTime.now().toIso8601String(),
-  //     },
-  //   };
-  // }
 }
 
 final simUpdateRepositoryProvider = Provider<SimUpdateRepository>((ref) => SimUpdateRepository());

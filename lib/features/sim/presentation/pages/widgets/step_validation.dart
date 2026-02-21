@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import '../../../../../l10n/gen/app_localizations.dart';
+import '../../../data/repositories/sim_activation_repository.dart';
 import '../components/activation_helpers.dart';
 
 class StepValidation extends StatelessWidget {
@@ -100,7 +102,24 @@ class StepValidation extends StatelessWidget {
         CardContainer(
           child: Column(
             children: [
-              _infoRow(theme, l10n.check_label_id_nature, ctrls['idNature']?.text),
+              Consumer(
+                builder: (context, ref, child) {
+                  final idNatureId = ctrls['idNature']?.text;
+                  final naturesAsync = ref.watch(idNaturesProvider);
+                  
+                  return naturesAsync.when(
+                    data: (natures) {
+                      final found = natures.firstWhere(
+                        (n) => n['id'].toString() == idNatureId,
+                        orElse: () => {'libelle': idNatureId},
+                      );
+                      return _infoRow(theme, l10n.check_label_id_nature, found['libelle']?.toString());
+                    },
+                    loading: () => _infoRow(theme, l10n.check_label_id_nature, "..."),
+                    error: (_, __) => _infoRow(theme, l10n.check_label_id_nature, idNatureId),
+                  );
+                },
+              ),
               _infoRow(theme, l10n.check_label_id_number, ctrls['idNumber']?.text),
               _infoRow(theme, l10n.check_label_id_validity, ctrls['idValidity']?.text),
             ],
