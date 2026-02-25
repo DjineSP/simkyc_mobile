@@ -373,6 +373,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sim_error_photo_back => 'Back photo is required';
 
   @override
+  String get sim_error_client_phone =>
+      'Please provide the customer phone number';
+
+  @override
+  String get sim_error_invalid_client_phone =>
+      'Invalid format (e.g: 6XX XX XX XX)';
+
+  @override
   String get sim_btn_next => 'NEXT';
 
   @override
@@ -492,6 +500,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get check_label_serial => 'Serial number';
 
   @override
+  String get check_label_client_phone => 'Customer phone';
+
+  @override
   String get check_label_status => 'Status';
 
   @override
@@ -519,10 +530,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get check_label_email => 'Email';
 
   @override
-  String get check_label_id_nature => 'Type';
+  String get check_label_id_nature => 'Nature';
 
   @override
-  String get check_label_id_number => 'ID number';
+  String get check_label_id_nature_other => 'Others';
+
+  @override
+  String get check_label_id_number => 'ID Number';
 
   @override
   String get check_label_id_validity => 'Expiry date';
@@ -535,10 +549,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get check_status_unknown => 'Suspended / Lost';
 
   @override
-  String get step_cust_lastname => 'Last name *';
+  String get step_cust_lastname => 'Last Name *';
 
   @override
-  String get step_cust_firstname => 'First name(s) *';
+  String get step_cust_firstname => 'First Names *';
+
+  @override
+  String get step_cust_fullname => 'Full Name *';
+
+  @override
+  String get step_cust_hint_fullname => 'Enter full name';
 
   @override
   String get step_cust_dob => 'Date of birth *';
@@ -554,6 +574,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get step_cust_female => 'Female';
+
+  @override
+  String get step_cust_client_phone => 'Customer phone number';
 
   @override
   String get step_cust_geo => 'Residential address';
@@ -578,6 +601,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get step_cust_hint_pob => 'e.g.: Conakry';
+
+  @override
+  String get step_cust_hint_client_phone => 'e.g.: 6XX XX XX XX';
 
   @override
   String get step_cust_hint_geo => 'Neighborhood, Street, Door number';
@@ -771,13 +797,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get history_detail_label_fullname => 'Full Name';
 
   @override
-  String get history_detail_label_gender => 'Gender';
+  String get history_detail_label_gender => 'Sexe';
 
   @override
-  String get history_detail_value_male => 'Male';
+  String get history_detail_value_male => 'Man';
 
   @override
-  String get history_detail_value_female => 'Female';
+  String get history_detail_value_female => 'Woman';
 
   @override
   String get history_detail_label_dob => 'Born on';

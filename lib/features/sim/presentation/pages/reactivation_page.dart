@@ -9,7 +9,7 @@ import '../../../../shared/widgets/app_message_dialog.dart';
 import '../../../../shared/widgets/step_progress_bar.dart';
 import '../../data/repositories/sim_reactivation_repository.dart';
 import '../../data/repositories/sim_activation_repository.dart'; // Pour idNaturesProvider
-import '../../../history/domain/entities/history_item.dart'; // Pour HistoryStatus
+
 import 'widgets/step_search_sim.dart';
 import 'widgets/step_check_client.dart';
 import 'widgets/step_new_sim_details.dart';
@@ -32,6 +32,7 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
     'frequent1': TextEditingController(),
     'frequent2': TextEditingController(),
     'frequent3': TextEditingController(),
+    'fullName': TextEditingController(),
   };
 
   final Map<String, FocusNode> _nodes = {
@@ -55,6 +56,7 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
         setState(() {
           _clientData = null;
           _ctrls['msisdn']!.clear();
+          _ctrls['fullName']?.clear();
         });
       }
     });
@@ -119,28 +121,15 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
 
       // Mapping du statut
       final statusCode = data['status'] ?? data['etat'] ?? data['state'];
-      String statusLabel = statusCode?.toString() ?? '-';
-      if (statusCode is int) {
-         statusLabel = HistoryStatus.fromCode(statusCode).label;
-      }
+      String statusLabel = (data['statut'] ?? statusCode)?.toString() ?? '-';
       
       // Mapping du genre
-      final genderRaw = data['gender'] ?? data['sexe'];
-      String genderLabel = genderRaw?.toString() ?? '-';
-      if (genderRaw is bool) {
-        genderLabel = genderRaw ? "Masculin" : "Féminin"; 
-      } else if (genderRaw.toString().toLowerCase() == 'true') {
-         genderLabel = "Masculin";
-      } else if (genderRaw.toString().toLowerCase() == 'false') {
-         genderLabel = "Féminin";
-      }
-
-
+      String genderLabel = data['sexe_Libelle']?.toString() ?? '-';
       setState(() {
         _clientData = {
           ...data,
           'msisdn': (data['msisdn'] ?? data['telephone'] ?? phone)?.toString(),
-          'serial': (data['serial'] ?? data['iccid'] ?? data['simSerial'] ?? data['serialSearch'])?.toString(),
+          'serial': (data['numero_Serie'] ?? data['serial'] ?? data['iccid'] ?? data['simSerial'] ?? data['serialSearch'])?.toString(),
           'status': statusLabel,
           'nom': (data['nom'] ?? data['lastName'])?.toString(),
           'prenom': (data['prenom'] ?? data['firstName'])?.toString(),
@@ -148,14 +137,16 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
           'pob': (data['pob'] ?? data['lieuNaissance'])?.toString(),
           'gender': genderLabel,
           'job': (data['job'] ?? data['profession'])?.toString(),
-          'geo': (data['geo'] ?? data['adresseGeo'])?.toString(),
+          'clientPhone': (data['numeroTelephoneClient'] ?? data['telephone'])?.toString(),
+          'geo': (data['adresseGeographique'] ?? data['geo'] ?? data['adresseGeo'])?.toString(),
           'post': (data['post'] ?? data['adressePostale'])?.toString(),
           'email': (data['email'] ?? data['mail'])?.toString(),
-          'idNature': natureLabel,
-          'idNumber': (data['idNumber'] ?? data['numeroPiece'])?.toString(),
-          'idValidity': (data['idValidity'] ?? data['dateValiditePiece'])?.toString(),
+          'idNature': (data['naturePiece'] ?? natureLabel).toString(),
+          'idNumber': (data['numeroPiece'] ?? data['idNumber'])?.toString(),
+          'idValidity': (data['dateValiditePiece'] ?? data['idValidity'])?.toString(),
         };
         _ctrls['msisdn']?.text = _clientData?['msisdn'] ?? "";
+        _ctrls['fullName']?.text = "${_clientData?['nom'] ?? ''} ${_clientData?['prenom'] ?? ''}".trim();
       });
 
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
@@ -163,6 +154,7 @@ class _SimReactivationPageState extends ConsumerState<SimReactivationPage> {
     } catch (e) {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
       _ctrls['msisdn']?.clear();
+      _ctrls['fullName']?.clear();
       _closeKeyboard();
       _showError(l10n.sim_react_error_user_not_found);
       return false;

@@ -74,53 +74,48 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                   ),
                 ),
               _buildHeader(l10n, theme),
-              Skeletonizer(
-                enabled: isLoading,
-                child: _buildKpiGrid(l10n, data),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  l10n.reports_section_reason,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
               Expanded(
                 child: Skeletonizer(
                   enabled: isLoading,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      // Calcul total des raisons pour le ratio
-                      int totalReasons = 0;
-                      data?.reasons.forEach((_, v) => totalReasons += v);
+                      final int acts = data?.activations ?? 0;
+                      final int reacts = data?.reactivations ?? 0;
+                      final int upds = data?.updates ?? 0;
+                      final int totalOps = acts + reacts + upds;
 
                       // Responsive : Ajuster le nombre de colonnes selon la largeur
-                      int crossAxisCount = 2;
+                      int crossAxisCount = 3; // Par défaut 3 jauges (une par opération)
                       double width = constraints.maxWidth;
-                      if (width >= 600 && width < 900) {
-                        crossAxisCount = 3;
-                      } else if (width >= 900) {
-                        crossAxisCount = 4;
+                      if (width < 600) {
+                        crossAxisCount = 2; // Sur petit écran, 2 par ligne pour être lisible
                       }
                       
                       return GridView.count(
                         crossAxisCount: crossAxisCount,
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.85, // Plus de hauteur pour le texte
+                        padding: const EdgeInsets.all(16),
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 0.85,
                         children: [
-                          _GaugeCard(label: l10n.reports_reason_customer, value: data?.reasons[ReportReasonType.customer] ?? 0, total: totalReasons, color: Colors.purple),
-                          _GaugeCard(label: l10n.reports_reason_sim_change, value: data?.reasons[ReportReasonType.simChange] ?? 0, total: totalReasons, color: Colors.orange),
-                          _GaugeCard(label: l10n.reports_reason_tech, value: data?.reasons[ReportReasonType.tech] ?? 0, total: totalReasons, color: Colors.blueGrey),
-                          _GaugeCard(label: l10n.reports_reason_fraud, value: data?.reasons[ReportReasonType.fraud] ?? 0, total: totalReasons, color: Colors.redAccent),
-                          _GaugeCard(label: l10n.reports_reason_other, value: data?.reasons[ReportReasonType.other] ?? 0, total: totalReasons, color: Colors.grey),
+                          _GaugeCard(
+                            label: l10n.reports_kpi_activations, 
+                            value: acts, 
+                            total: totalOps, 
+                            color: Colors.green
+                          ),
+                          _GaugeCard(
+                            label: l10n.reports_kpi_reactivations, 
+                            value: reacts, 
+                            total: totalOps, 
+                            color: Colors.blue
+                          ),
+                          _GaugeCard(
+                            label: l10n.reports_kpi_updates, 
+                            value: upds, 
+                            total: totalOps, 
+                            color: Colors.orange
+                          ),
                         ],
                       );
                     }
@@ -174,97 +169,6 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               setState(() => _periodValue = v);
               _applyPeriod(v, l10n);
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKpiGrid(var l10n, ReportsData? data) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _SummaryCard(
-              label: l10n.reports_kpi_activations,
-              value: (data?.activations ?? 0).toString(),
-              accentColor: Colors.green,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _SummaryCard(
-              label: l10n.reports_kpi_reactivations,
-              value: (data?.reactivations ?? 0).toString(),
-              accentColor: Colors.blue,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _SummaryCard(
-              label: l10n.reports_kpi_updates,
-              value: (data?.updates ?? 0).toString(),
-              accentColor: Colors.orange,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color accentColor;
-
-  const _SummaryCard({
-    required this.label,
-    required this.value,
-    required this.accentColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 26,
-            height: 4,
-            decoration: BoxDecoration(
-              color: accentColor,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10.5,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ],
       ),

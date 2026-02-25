@@ -800,6 +800,18 @@ abstract class AppLocalizations {
   /// **'Back photo is required'**
   String get sim_error_photo_back;
 
+  /// No description provided for @sim_error_client_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide the customer phone number'**
+  String get sim_error_client_phone;
+
+  /// No description provided for @sim_error_invalid_client_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid format (e.g: 6XX XX XX XX)'**
+  String get sim_error_invalid_client_phone;
+
   /// No description provided for @sim_btn_next.
   ///
   /// In en, this message translates to:
@@ -1028,6 +1040,12 @@ abstract class AppLocalizations {
   /// **'Serial number'**
   String get check_label_serial;
 
+  /// No description provided for @check_label_client_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer phone'**
+  String get check_label_client_phone;
+
   /// No description provided for @check_label_status.
   ///
   /// In en, this message translates to:
@@ -1085,13 +1103,19 @@ abstract class AppLocalizations {
   /// No description provided for @check_label_id_nature.
   ///
   /// In en, this message translates to:
-  /// **'Type'**
+  /// **'Nature'**
   String get check_label_id_nature;
+
+  /// No description provided for @check_label_id_nature_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get check_label_id_nature_other;
 
   /// No description provided for @check_label_id_number.
   ///
   /// In en, this message translates to:
-  /// **'ID number'**
+  /// **'ID Number'**
   String get check_label_id_number;
 
   /// No description provided for @check_label_id_validity.
@@ -1115,14 +1139,26 @@ abstract class AppLocalizations {
   /// No description provided for @step_cust_lastname.
   ///
   /// In en, this message translates to:
-  /// **'Last name *'**
+  /// **'Last Name *'**
   String get step_cust_lastname;
 
   /// No description provided for @step_cust_firstname.
   ///
   /// In en, this message translates to:
-  /// **'First name(s) *'**
+  /// **'First Names *'**
   String get step_cust_firstname;
+
+  /// No description provided for @step_cust_fullname.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name *'**
+  String get step_cust_fullname;
+
+  /// No description provided for @step_cust_hint_fullname.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter full name'**
+  String get step_cust_hint_fullname;
 
   /// No description provided for @step_cust_dob.
   ///
@@ -1153,6 +1189,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Female'**
   String get step_cust_female;
+
+  /// No description provided for @step_cust_client_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer phone number'**
+  String get step_cust_client_phone;
 
   /// No description provided for @step_cust_geo.
   ///
@@ -1201,6 +1243,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g.: Conakry'**
   String get step_cust_hint_pob;
+
+  /// No description provided for @step_cust_hint_client_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g.: 6XX XX XX XX'**
+  String get step_cust_hint_client_phone;
 
   /// No description provided for @step_cust_hint_geo.
   ///
@@ -1577,19 +1625,19 @@ abstract class AppLocalizations {
   /// No description provided for @history_detail_label_gender.
   ///
   /// In en, this message translates to:
-  /// **'Gender'**
+  /// **'Sexe'**
   String get history_detail_label_gender;
 
   /// No description provided for @history_detail_value_male.
   ///
   /// In en, this message translates to:
-  /// **'Male'**
+  /// **'Man'**
   String get history_detail_value_male;
 
   /// No description provided for @history_detail_value_female.
   ///
   /// In en, this message translates to:
-  /// **'Female'**
+  /// **'Woman'**
   String get history_detail_value_female;
 
   /// No description provided for @history_detail_label_dob.

@@ -54,9 +54,7 @@ class HistoryDetailPage extends StatelessWidget {
                   icon: Icons.info_outline_rounded,
                   isDark: isDark,
                   children: [
-                    _buildInfoRow(l10n.history_detail_label_op_id, detail.id, isCode: true),
-                    _buildInfoRow(l10n.history_detail_label_op_serial, detail.msisdn, isCode: true),
-                    _buildInfoRow(l10n.history_detail_label_op_target, StringUtils.formatPhone(detail.numeroTelephoneClient ?? ''), isCode: true, isBold: true),
+                    _buildInfoRow(l10n.history_detail_label_op_target, StringUtils.formatPhone(detail.msisdn), isCode: true, isBold: true),
                     _buildInfoRow(l10n.history_detail_label_op_date, _formatDateTime(detail.dateActivation ?? detail.editDate ?? detail.createDate)),
                   ],
                 ),
@@ -111,12 +109,15 @@ class HistoryDetailPage extends StatelessWidget {
 
   Widget _buildHeader(HistoryDetail detail, HistoryActionType type, bool isDark, AppLocalizations l10n) {
     // Determine status color
-    final status = HistoryStatus.fromCode(detail.etat);
-    final statusColor = status.color;
-    // Map status label if possible, else use default
-    String statusLabel = status.label;
-    if (status == HistoryStatus.active) statusLabel = l10n.history_status_active;
-    if (status == HistoryStatus.suspended) statusLabel = l10n.history_status_suspended;
+    final statusLabel = detail.statut ?? l10n.history_status_pending;
+    // Semantic color heuristics based on text
+    Color statusColor = Colors.orange;
+    final lower = statusLabel.toLowerCase();
+    if (lower.contains('activ') || lower.contains('traité') || lower.contains('succès') || lower.contains('valide')) {
+      statusColor = Colors.green;
+    } else if (lower.contains('suspend') || lower.contains('rej') || lower.contains('annul') || lower.contains('échou')) {
+      statusColor = Colors.red;
+    }
 
     return Center(
       child: Column(

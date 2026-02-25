@@ -89,6 +89,7 @@ class StepValidation extends StatelessWidget {
         CardContainer(
           child: Column(
             children: [
+              _infoRow(theme, l10n.check_label_client_phone, ctrls['clientPhone']?.text),
               _infoRow(theme, l10n.check_label_address, ctrls['geo']?.text),
               _infoRow(theme, l10n.check_label_post, ctrls['post']?.text),
               _infoRow(theme, l10n.check_label_email, ctrls['email']?.text),

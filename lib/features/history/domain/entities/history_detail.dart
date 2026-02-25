@@ -4,7 +4,7 @@ class HistoryDetail {
   final String id;
   final String msisdn;
   final DateTime? dateActivation;
-  final int etat;
+  final String? statut;
   final bool? saveByPos;
   final DateTime? createDate;
   final DateTime? editDate;
@@ -31,7 +31,7 @@ class HistoryDetail {
     required this.id,
     required this.msisdn,
     this.dateActivation,
-    required this.etat,
+    this.statut,
     this.saveByPos,
     this.createDate,
     this.editDate,
@@ -60,7 +60,7 @@ class HistoryDetail {
       id: (json['iD_Activation_Sim'] ?? json['iD_Reactivation_Sim'] ?? json['iD_Mise_A_Jour_Client'] ?? json['id'] ?? '').toString(),
       msisdn: json['msisdn']?.toString() ?? '',
       dateActivation: json['dateActivation'] != null ? DateTime.tryParse(json['dateActivation']) : null,
-      etat: json['etat'] is int ? json['etat'] : 0,
+      statut: json['statut'],
       saveByPos: json['saveByPos'],
       createDate: json['createDate'] != null ? DateTime.tryParse(json['createDate']) : null,
       editDate: json['editDate'] != null ? DateTime.tryParse(json['editDate']) : null,

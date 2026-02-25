@@ -77,33 +77,6 @@ class SimReactivationRepository {
     }
   }
 
-  // Future<Map<String, dynamic>> fetchActivationByPhone(String msisdn) async {
-  //   await Future.delayed(const Duration(milliseconds: 800));
-  //   if (msisdn.trim().isEmpty) {
-  //     throw Exception('Numéro de téléphone requis');
-  //   }
-  //   if (msisdn.endsWith('000')) {
-  //     throw Exception('Activation introuvable');
-  //   }
-  //   return {
-  //     'msisdn': msisdn,
-  //     'serial': '8922410123456789012',
-  //     'status': 'Suspendue (Perte)',
-  //     'nom': 'DJINE',
-  //     'prenom': 'SINTO PAFING',
-  //     'dateNaissance': '22/05/2005',
-  //     'lieuNaissance': 'Conakry',
-  //     'sexe': 'Homme',
-  //     'profession': 'Etudiant',
-  //     'adresseGeo': 'Kipé, Rue KI-142, Conakry',
-  //     'adressePostale': 'BP 1024 Conakry',
-  //     'mail': 'djine.pafing@gmail.com',
-  //     'idNaturePiece': 'CNI',
-  //     'numeroPiece': 'GN-12345678-22',
-  //     'dateValiditePiece': '14/11/2028',
-  //   };
-  // }
-
   Future<Map<String, dynamic>> reactivateSim({
     required String oldIccId,
     required String newIccId,
@@ -158,29 +131,6 @@ class SimReactivationRepository {
       throw Exception(e.message ?? 'Erreur réseau');
     }
   }
-
-  // Future<Map<String, dynamic>> reactivateSim({
-  //   required String newMsisdn,
-  //   String? contactOne,
-  //   String? contactTwo,
-  //   String? contactThree,
-  // }) async {
-  //   await Future.delayed(const Duration(seconds: 1));
-  //   if (newMsisdn.trim().isEmpty) {
-  //     throw Exception('Nouveau MSISDN requis');
-  //   }
-  //   return {
-  //     'result': true,
-  //     'message': 'Réactivation effectuée avec succès (simulation)',
-  //     'data': {
-  //       'newMsisdn': newMsisdn,
-  //       'contactOne': contactOne,
-  //       'contactTwo': contactTwo,
-  //       'contactThree': contactThree,
-  //       'updatedAt': DateTime.now().toIso8601String(),
-  //     },
-  //   };
-  // }
 }
 
 final simReactivationRepositoryProvider = Provider<SimReactivationRepository>((ref) => SimReactivationRepository());

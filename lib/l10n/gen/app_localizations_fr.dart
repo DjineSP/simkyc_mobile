@@ -375,6 +375,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sim_error_photo_back => 'La photo verso est obligatoire';
 
   @override
+  String get sim_error_client_phone =>
+      'Veuillez renseigner le numéro du client';
+
+  @override
+  String get sim_error_invalid_client_phone =>
+      'Format invalide (ex: 6XX XX XX XX)';
+
+  @override
   String get sim_btn_next => 'SUIVANT';
 
   @override
@@ -494,6 +502,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get check_label_serial => 'Numéro de série';
 
   @override
+  String get check_label_client_phone => 'Numéro du client';
+
+  @override
   String get check_label_status => 'Statut';
 
   @override
@@ -506,7 +517,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get check_label_pob => 'Lieu de naissance';
 
   @override
-  String get check_label_gender => 'Genre';
+  String get check_label_gender => 'Sexe';
 
   @override
   String get check_label_job => 'Profession';
@@ -522,6 +533,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get check_label_id_nature => 'Nature';
+
+  @override
+  String get check_label_id_nature_other => 'Autres';
 
   @override
   String get check_label_id_number => 'N° de pièce';
@@ -543,6 +557,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get step_cust_firstname => 'Prénoms *';
 
   @override
+  String get step_cust_fullname => 'Nom complet *';
+
+  @override
+  String get step_cust_hint_fullname => 'Entrez le nom complet';
+
+  @override
   String get step_cust_dob => 'Date de naissance *';
 
   @override
@@ -556,6 +576,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get step_cust_female => 'Femme';
+
+  @override
+  String get step_cust_client_phone => 'Numéro du client';
 
   @override
   String get step_cust_geo => 'Adresse géographique';
@@ -580,6 +603,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get step_cust_hint_pob => 'Ex: Conakry';
+
+  @override
+  String get step_cust_hint_client_phone => 'Ex: 6XX XX XX XX';
 
   @override
   String get step_cust_hint_geo => 'Quartier, Rue, N° de porte';
@@ -779,10 +805,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get history_detail_label_gender => 'Sexe';
 
   @override
-  String get history_detail_value_male => 'Masculin';
+  String get history_detail_value_male => 'Homme';
 
   @override
-  String get history_detail_value_female => 'Féminin';
+  String get history_detail_value_female => 'Femme';
 
   @override
   String get history_detail_label_dob => 'Né(e) le';

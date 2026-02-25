@@ -446,7 +446,7 @@ class _HistoryItemCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                 _StatusBadge(status: item.status),
+                 _StatusBadge(statut: item.statut),
 
                  // Bouton Détails
                    InkWell(
@@ -493,37 +493,33 @@ class _HistoryItemCard extends StatelessWidget {
 }
 
 class _StatusBadge extends StatelessWidget {
-  final HistoryStatus status;
-  const _StatusBadge({required this.status});
+  final String? statut;
+  const _StatusBadge({this.statut});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    String label;
-    switch (status) {
-      case HistoryStatus.active:
-        label = l10n.history_status_active;
-        break;
-      case HistoryStatus.suspended:
-        label = l10n.history_status_suspended;
-        break;
-      case HistoryStatus.pending:
-      default:
-        label = l10n.history_status_pending;
-        break;
+    String label = statut ?? l10n.history_status_pending;
+    
+    Color color = Colors.orange;
+    final lower = label.toLowerCase();
+    if (lower.contains('activ') || lower.contains('traité') || lower.contains('succès') || lower.contains('valide')) {
+      color = AppColors.success;
+    } else if (lower.contains('suspend') || lower.contains('rej') || lower.contains('annul') || lower.contains('échou')) {
+      color = Colors.red;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: status.color.withOpacity(0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: status.color.withOpacity(0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: status.color,
+          color: color,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),

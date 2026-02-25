@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
+import '../../../data/repositories/sim_activation_repository.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../components/activation_helpers.dart';
 
-class StepCheckClient extends StatelessWidget {
+class StepCheckClient extends ConsumerWidget {
   final Map<String, dynamic> data;
 
   const StepCheckClient({
@@ -12,7 +14,7 @@ class StepCheckClient extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
@@ -31,7 +33,6 @@ class StepCheckClient extends StatelessWidget {
             children: [
               _infoRow(l10n.check_label_msisdn, data['msisdn'], theme),
               _infoRow(l10n.check_label_serial, data['serial'] ?? data['serialSearch'], theme),
-              _infoRow(l10n.check_label_status, data['status'] ?? l10n.check_status_unknown, theme, isStatus: true),
             ],
           ),
         ),
@@ -45,7 +46,7 @@ class StepCheckClient extends StatelessWidget {
               _infoRow(l10n.check_label_name, '${data['nom'] ?? ''} ${data['prenom'] ?? ''}'.trim(), theme),
               _infoRow(l10n.check_label_dob, data['dob'], theme),
               _infoRow(l10n.check_label_pob, data['pob'], theme),
-              _infoRow(l10n.check_label_gender, data['gender'] ?? (data['isMale'] == true ? 'Masculin' : 'Féminin'), theme),
+              _infoRow(l10n.check_label_gender, data['gender'] ?? (data['isMale'] == true ? 'Homme' : 'Femme'), theme),
               _infoRow(l10n.check_label_job, data['job'], theme),
             ],
           ),
@@ -57,6 +58,7 @@ class StepCheckClient extends StatelessWidget {
         CardContainer(
           child: Column(
             children: [
+              _infoRow(l10n.check_label_client_phone, data['clientPhone'], theme),
               _infoRow(l10n.check_label_address, data['geo'], theme),
               _infoRow(l10n.check_label_post, data['post'] ?? 'N/A', theme),
               _infoRow(l10n.check_label_email, data['email'], theme),
@@ -70,7 +72,18 @@ class StepCheckClient extends StatelessWidget {
         CardContainer(
           child: Column(
             children: [
-              _infoRow(l10n.check_label_id_nature, data['idNature'] ?? 'CNI', theme),
+              ref.watch(idNaturesProvider).when(
+                data: (natures) {
+                  final idNatureId = data['idNature']?.toString();
+                  final found = natures.firstWhere(
+                    (n) => n['id'].toString() == idNatureId,
+                    orElse: () => {'libelle': idNatureId ?? 'CNI'},
+                  );
+                  return _infoRow(l10n.check_label_id_nature, found['libelle']?.toString(), theme);
+                },
+                loading: () => _infoRow(l10n.check_label_id_nature, "...", theme),
+                error: (_, __) => _infoRow(l10n.check_label_id_nature, data['idNature']?.toString() ?? 'CNI', theme),
+              ),
               _infoRow(l10n.check_label_id_number, data['idNumber'], theme),
               _infoRow(l10n.check_label_id_validity, data['idValidity'], theme),
             ],

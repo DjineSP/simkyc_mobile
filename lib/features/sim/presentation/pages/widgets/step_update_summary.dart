@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../l10n/gen/app_localizations.dart';
+import '../../../data/repositories/sim_activation_repository.dart';
 import '../components/activation_helpers.dart';
 
-class StepUpdateSummary extends StatelessWidget {
+class StepUpdateSummary extends ConsumerWidget {
   final Map<String, TextEditingController> ctrls;
   final File? frontImg;
   final File? backImg;
@@ -16,7 +18,7 @@ class StepUpdateSummary extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
@@ -57,7 +59,7 @@ class StepUpdateSummary extends StatelessWidget {
               _infoRow(
                 theme,
                 l10n.check_label_name,
-                '${ctrls['lastName']?.text ?? ''} ${ctrls['firstName']?.text ?? ''}'.trim(),
+                ctrls['lastName']?.text,
               ),
               _infoRow(theme, l10n.check_label_dob, ctrls['dob']?.text),
               _infoRow(theme, l10n.check_label_pob, ctrls['pob']?.text),
@@ -73,6 +75,7 @@ class StepUpdateSummary extends StatelessWidget {
         CardContainer(
           child: Column(
             children: [
+              _infoRow(theme, l10n.check_label_client_phone, ctrls['clientPhone']?.text),
               _infoRow(theme, l10n.check_label_address, ctrls['geo']?.text),
               _infoRow(theme, l10n.check_label_post, ctrls['post']?.text),
               _infoRow(theme, l10n.check_label_email, ctrls['email']?.text),
@@ -86,7 +89,18 @@ class StepUpdateSummary extends StatelessWidget {
         CardContainer(
           child: Column(
             children: [
-              _infoRow(theme, l10n.check_label_id_nature, ctrls['idNature']?.text),
+              ref.watch(idNaturesProvider).when(
+                data: (natures) {
+                  final idNatureId = ctrls['idNature']?.text;
+                  final found = natures.firstWhere(
+                    (n) => (n['id'] ?? n['value'] ?? n['code'])?.toString() == idNatureId,
+                    orElse: () => {'libelle': idNatureId == '0' ? l10n.check_label_id_nature_other : idNatureId ?? ''},
+                  );
+                  return _infoRow(theme, l10n.check_label_id_nature, found['libelle']?.toString());
+                },
+                loading: () => _infoRow(theme, l10n.check_label_id_nature, "..."),
+                error: (_, __) => _infoRow(theme, l10n.check_label_id_nature, ctrls['idNature']?.text),
+              ),
               _infoRow(theme, l10n.check_label_id_number, ctrls['idNumber']?.text),
               _infoRow(theme, l10n.check_label_id_validity, ctrls['idValidity']?.text),
             ],

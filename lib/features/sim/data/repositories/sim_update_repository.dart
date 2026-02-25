@@ -115,6 +115,7 @@ class SimUpdateRepository {
       // Construction du payload exact demandé
       final Map<String, dynamic> payload = {
         "idActivationSim": idActivationSim,
+        "msisdn": fields['msisdn'],
         "numeroTelephoneClient": fields['telephone'] ?? fields['msisdn'],
         "dateMiseAJour": DateTime.now().toIso8601String(),
         "etat": 0,

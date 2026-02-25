@@ -25,6 +25,7 @@ class StepSearchSim extends StatelessWidget {
       listenable: Listenable.merge([
         ctrls['msisdnSearch'] ?? TextEditingController(),
         ctrls['msisdn'] ?? TextEditingController(),
+        ctrls['fullName'] ?? TextEditingController(),
       ]),
       builder: (context, _) {
         final bool isIdentified = (ctrls['msisdn']?.text ?? "").isNotEmpty;
@@ -63,7 +64,11 @@ class StepSearchSim extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   if (isIdentified)
-                    _buildUserBadge(ctrls['msisdn']!.text, theme, l10n)
+                    _buildUserBadge(
+                      (ctrls['fullName']?.text.isNotEmpty ?? false) ? ctrls['fullName']!.text : ctrls['msisdn']!.text, 
+                      theme, 
+                      l10n
+                    )
                   else
                     _buildInfoBadge(theme, l10n),
 
@@ -100,7 +105,7 @@ class StepSearchSim extends StatelessWidget {
     );
   }
 
-  Widget _buildUserBadge(String phone, ThemeData theme, AppLocalizations l10n) {
+  Widget _buildUserBadge(String displayText, ThemeData theme, AppLocalizations l10n) {
     final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
@@ -125,7 +130,7 @@ class StepSearchSim extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(phone,
+                Text(displayText,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
               ],
             ),

@@ -41,6 +41,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     'geo': TextEditingController(),
     'post': TextEditingController(),
     'email': TextEditingController(),
+    'clientPhone': TextEditingController(),
     'idNature': TextEditingController(),
     'idNumber': TextEditingController(),
     'idValidity': TextEditingController(),
@@ -54,6 +55,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     'pob': FocusNode(),
     'job': FocusNode(),
     'geo': FocusNode(),
+    'clientPhone': FocusNode(),
     'idNumber': FocusNode(),
     'idValidity': FocusNode(),
   };
@@ -95,6 +97,11 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     final file = File('${dir.path}${Platform.pathSeparator}${prefix}_${DateTime.now().millisecondsSinceEpoch}.jpg');
     await file.writeAsBytes(bytes, flush: true);
     return file;
+  }
+
+  bool _isInvalidFormat(String input) {
+    final clean = input.replaceAll(' ', '');
+    return clean.isNotEmpty && (clean.length < 9 || !clean.startsWith('6'));
   }
 
   @override
@@ -160,9 +167,6 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     if (_ctrls['lastName']!.text.trim().isEmpty) {
       return _applyError('lastName', l10n.sim_error_lastname);
     }
-    if (_ctrls['firstName']!.text.trim().isEmpty) {
-      return _applyError('firstName', l10n.sim_error_firstname);
-    }
     if (_ctrls['dob']!.text.trim().isEmpty) {
       return _applyError('dob', l10n.sim_error_dob);
     }
@@ -200,6 +204,11 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
            return _applyError('idValidity', "Date invalide (min: ${DateFormat('dd/MM/yyyy').format(minDateNorm)})");
         }
     } catch (_) {}
+
+    final clientPhone = _ctrls['clientPhone']!.text.trim().replaceAll(' ', '');
+    if (clientPhone.isNotEmpty && _isInvalidFormat(clientPhone)) {
+      return _applyError('clientPhone', l10n.sim_error_invalid_client_phone);
+    }
 
     // 4. Photos
     if (_frontImg == null) {
@@ -271,20 +280,25 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
         } else {
           _idActivationSim = 0;
         }
-        _ctrls['firstName']!.text = (data['prenom'] ?? data['firstName'] ?? '').toString();
-        _ctrls['lastName']!.text = (data['nom'] ?? data['lastName'] ?? '').toString();
+        final nom = (data['nom'] ?? data['lastName'] ?? '').toString();
+        final prenom = (data['prenom'] ?? data['firstName'] ?? '').toString();
+        _ctrls['lastName']!.text = "$nom $prenom".trim();
+        _ctrls['firstName']!.text = ""; // Plus utilisé directement dans l'UI
         _ctrls['dob']!.text = (data['dateNaissance'] ?? data['dob'] ?? '').toString();
         _ctrls['pob']!.text = (data['lieuNaissance'] ?? data['pob'] ?? '').toString();
-        final gender = data['sexe'] ?? data['gender'];
+        final gender = data['sexe'];
         if (gender is bool) {
           _ctrls['gender']!.text = gender ? 'Homme' : 'Femme';
+        } else if (gender != null) {
+          _ctrls['gender']!.text = (gender.toString().toLowerCase() == 'true') ? 'Homme' : 'Femme';
         } else {
-          _ctrls['gender']!.text = (gender ?? 'Homme').toString();
+          _ctrls['gender']!.text = 'Homme'; // Fallback
         }
         _ctrls['job']!.text = (data['profession'] ?? data['job'] ?? '').toString();
         _ctrls['geo']!.text = (data['adresseGeo'] ?? data['geo'] ?? '').toString();
         _ctrls['post']!.text = (data['adressePostale'] ?? data['post'] ?? '').toString();
         _ctrls['email']!.text = (data['mail'] ?? data['email'] ?? '').toString();
+        _ctrls['clientPhone']!.text = (data['telephone'] ?? data['clientPhone'] ?? data['numeroTelephoneClient'] ?? '').toString();
         _ctrls['idNature']!.text = (data['idNaturePiece'] ?? data['idNature'] ?? '').toString();
         _ctrls['idNumber']!.text = (data['numeroPiece'] ?? data['idNumber'] ?? '').toString();
         _ctrls['idValidity']!.text = (data['dateValiditePiece'] ?? data['idValidity'] ?? '').toString();
@@ -446,7 +460,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
       final fields = <String, dynamic>{
         'msisdn': _ctrls['msisdnSearch']!.text.trim(),
         'nom': _ctrls['lastName']!.text.trim(),
-        'prenom': _ctrls['firstName']!.text.trim(),
+        'prenom': '',
         'sexe': _ctrls['gender']!.text == 'Homme' || _ctrls['gender']!.text == 'Male',
         'dateNaissance': _ctrls['dob']!.text.trim(),
         'lieuNaissance': _ctrls['pob']!.text.trim(),
@@ -454,7 +468,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
         'dateValiditePiece': _ctrls['idValidity']!.text.trim(),
         'numeroPiece': _ctrls['idNumber']!.text.trim(),
         'adressePostale': _ctrls['post']!.text.trim().isEmpty ? null : _ctrls['post']!.text.trim(),
-        'telephone': _ctrls['msisdnSearch']!.text.trim(),
+        'telephone': _ctrls['clientPhone']!.text.trim().isNotEmpty ? _ctrls['clientPhone']!.text.trim() : _ctrls['msisdnSearch']!.text.trim(),
         'mail': _ctrls['email']!.text.trim().isEmpty ? null : _ctrls['email']!.text.trim(),
         'adresseGeo': _ctrls['geo']!.text.trim(),
         'idNaturePiece': int.tryParse(_ctrls['idNature']!.text.trim()) ?? 0,

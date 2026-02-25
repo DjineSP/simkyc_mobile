@@ -17,6 +17,7 @@ class StepIdDetails extends ConsumerWidget {
   final String? natureError;
   final String? numberError;
   final String? validityError;
+  final DateTime minDate; // Add minDate from server
 
   StepIdDetails({
     super.key,
@@ -30,6 +31,7 @@ class StepIdDetails extends ConsumerWidget {
     this.natureError,
     this.numberError,
     this.validityError,
+    required this.minDate, // Make it required
   });
 
   @override
@@ -158,11 +160,38 @@ class StepIdDetails extends ConsumerWidget {
 
   Future<void> _selectValidityDate(BuildContext context) async {
     final theme = Theme.of(context);
+    
+    // Normalisation de la date min (on ignore l'heure)
+    final minDateNorm = DateTime(minDate.year, minDate.month, minDate.day);
+    
+    DateTime? parsedDate;
+    try {
+      if (validity.text.isNotEmpty) {
+        final parts = validity.text.split('/');
+        if (parts.length == 3) {
+          parsedDate = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+        }
+      }
+    } catch (_) {}
+
+    DateTime defaultInitial = minDateNorm.add(const Duration(days: 365)); // Par défaut +1 an après la date serveur
+    DateTime targetInitial = parsedDate ?? defaultInitial;
+
+    final firstDate = minDateNorm; // La date minimale sélectionnable est la date du serveur
+    final lastDate = DateTime(2100);
+
+    if (targetInitial.isBefore(firstDate)) {
+       targetInitial = firstDate;
+    }
+    if (targetInitial.isAfter(lastDate)) {
+       targetInitial = lastDate;
+    }
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 365)), // Par défaut +1 an
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
+      initialDate: targetInitial,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) => Theme(
         data: theme.copyWith(
           colorScheme: theme.colorScheme.copyWith(

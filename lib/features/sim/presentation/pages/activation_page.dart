@@ -33,6 +33,7 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
     'dob': TextEditingController(), 'pob': TextEditingController(),
     'geo': TextEditingController(), 'post': TextEditingController(),
     'email': TextEditingController(), 'job': TextEditingController(),
+    'clientPhone': TextEditingController(),
     'idNature': TextEditingController(), 'idNumber': TextEditingController(),
     'idValidity': TextEditingController(),
   };
@@ -43,6 +44,7 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
     'dob': FocusNode(), 'pob': FocusNode(),
     'geo': FocusNode(), 'post': FocusNode(),
     'email': FocusNode(), 'job': FocusNode(),
+    'clientPhone': FocusNode(),
     'idNature': FocusNode(), 'idNumber': FocusNode(),
     'idValidity': FocusNode(),
   };
@@ -69,6 +71,11 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
     _ctrls.forEach((_, v) => v.dispose());
     _nodes.forEach((_, v) => v.dispose());
     super.dispose();
+  }
+
+  bool _isInvalidFormat(String input) {
+    final clean = input.replaceAll(' ', '');
+    return clean.isNotEmpty && (clean.length < 9 || !clean.startsWith('6'));
   }
 
   Future<bool> _validate() async {
@@ -105,6 +112,12 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
       if (_ctrls['pob']!.text.trim().isEmpty) {
         setState(() => _errors['pob'] = l10n.sim_error_pob);
         _nodes['pob']!.requestFocus();
+        return false;
+      }
+      final clientPhone = _ctrls['clientPhone']!.text.trim().replaceAll(' ', '');
+      if (clientPhone.isNotEmpty && _isInvalidFormat(clientPhone)) {
+        setState(() => _errors['clientPhone'] = l10n.sim_error_invalid_client_phone);
+        _nodes['clientPhone']!.requestFocus();
         return false;
       }
     }
@@ -219,7 +232,7 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
         'dateValiditePiece': DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(_ctrls['idValidity']!.text.trim())),
         'numeroPiece': _ctrls['idNumber']!.text.trim(),
         'adressePostale': _ctrls['post']!.text.trim(),
-        'numeroTelephoneClient': _ctrls['msisdn']!.text.trim(),
+        'numeroTelephoneClient': _ctrls['clientPhone']!.text.trim(),
         'mail': _ctrls['email']!.text.trim(),
         'adresseGeographique': _ctrls['geo']!.text.trim(),
         'msisdn': _ctrls['msisdn']!.text.trim(),
@@ -296,7 +309,21 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
         onFetchMsisdn: _fetchSimDataManually,
       );
       case 2: return StepCustomerInfo(ctrls: _ctrls, nodes: _nodes, errors: _errors, isMale: _isMale, onGenderChanged: (v) => setState(() => _isMale = v));
-      case 3: return StepIdDetails(nature: _ctrls['idNature']!, number: _ctrls['idNumber']!, validity: _ctrls['idValidity']!, natureFocus: _nodes['idNature']!, numberFocus: _nodes['idNumber']!, validityFocus: _nodes['idValidity']!, natureError: _errors['idNature'], numberError: _errors['idNumber'], validityError: _errors['idValidity']);
+      case 3: 
+        final user = ref.read(authProvider).asData?.value?.userData;
+        final minDate = user?.dateJour ?? DateTime.now();
+        return StepIdDetails(
+          nature: _ctrls['idNature']!, 
+          number: _ctrls['idNumber']!, 
+          validity: _ctrls['idValidity']!, 
+          natureFocus: _nodes['idNature']!, 
+          numberFocus: _nodes['idNumber']!, 
+          validityFocus: _nodes['idValidity']!, 
+          natureError: _errors['idNature'], 
+          numberError: _errors['idNumber'], 
+          validityError: _errors['idValidity'],
+          minDate: minDate,
+        );
       case 4: return StepPhotoUpload(frontImage: _frontImg, backImage: _backImg, frontError: _errors['idFront'], backError: _errors['idBack'], onPhotoCaptured: (file, isFront) { setState(() { if (isFront) { _frontImg = file; _errors['idFront'] = null; } else { _backImg = file; _errors['idBack'] = null; } }); });
       case 5: return StepValidation(ctrls: _ctrls, isMale: _isMale, frontImg: _frontImg, backImg: _backImg);
       default: return const SizedBox();

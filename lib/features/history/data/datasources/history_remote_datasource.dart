@@ -71,8 +71,6 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
     
     final msisdn = json['msisdn']?.toString() ?? '';
     final clientName = '${json['noms'] ?? ''} ${json['prenoms'] ?? ''}'.trim();
-    final etat = json['etat'] ?? 0;
-    final status = HistoryStatus.fromCode(etat is int ? etat : 0);
     
     DateTime operationDate = DateTime.now();
     if (json['date_Operation'] != null) {
@@ -86,7 +84,7 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
       id: id,
       msisdn: msisdn,
       dateActivation: operationDate, // Ou autre date si dispo
-      etat: etat is int ? etat : 0,
+      statut: json['statut']?.toString(),
       noms: json['noms'],
       prenoms: json['prenoms'],
       sexe: json['sexe'], // bool direct dans le json
@@ -110,7 +108,7 @@ class HistoryRemoteDataSourceImpl implements HistoryRemoteDataSource {
       clientName: clientName,
       info: info,
       operationDate: operationDate,
-      status: status,
+      statut: json['statut']?.toString(),
       type: type,
       details: details,
     );

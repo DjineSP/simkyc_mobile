@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/utils/phone_formatter.dart';
 import '../../../../../core/providers/auth_provider.dart';
 import '../../../data/repositories/sim_activation_repository.dart';
 import '../components/activation_helpers.dart';
@@ -32,7 +34,7 @@ class StepEditClient extends ConsumerWidget {
     final theme = Theme.of(context);
     final idNaturesAsync = ref.watch(idNaturesProvider);
 
-    final selectedValue = (ctrls['idNature']?.text.isEmpty ?? true) ? null : ctrls['idNature']!.text;
+    final rawIdNature = ctrls['idNature']?.text.trim() ?? '';
 
     return ValueListenableBuilder(
       valueListenable: ctrls['gender']!,
@@ -49,14 +51,7 @@ class StepEditClient extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildField(context, l10n.step_cust_lastname, 'lastName', hint: l10n.step_cust_hint_name)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildField(context, l10n.step_cust_firstname, 'firstName', hint: l10n.step_cust_hint_firstname)),
-                    ],
-                  ),
+                  _buildField(context, l10n.step_cust_fullname, 'lastName', hint: l10n.step_cust_hint_fullname),
                   _buildDatePicker(context, ref, l10n.step_cust_dob, 'dob'),
                   _buildField(context, l10n.step_cust_pob, 'pob', hint: l10n.step_cust_hint_pob),
                   LabelText(l10n.step_cust_gender),
@@ -81,6 +76,14 @@ class StepEditClient extends ConsumerWidget {
                   _buildField(context, l10n.step_cust_job, 'job', hint: l10n.step_cust_hint_job),
                   _buildField(context, l10n.step_cust_geo, 'geo', hint: l10n.step_cust_hint_geo),
                   _buildField(context, l10n.step_cust_post, 'post', hint: l10n.step_cust_hint_post),
+                  _buildField(
+                    context, 
+                    l10n.step_cust_client_phone, 
+                    'clientPhone', 
+                    hint: l10n.step_cust_hint_client_phone,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly, PhoneFormatter()],
+                  ),
                   _buildField(context, l10n.step_cust_email, 'email', hint: l10n.step_cust_hint_email),
                 ],
               ),
@@ -98,17 +101,36 @@ class StepEditClient extends ConsumerWidget {
                   LabelText(l10n.step_edit_nature_label),
                   idNaturesAsync.when(
                     data: (items) {
+                      // 1. Déterminer quel élément correspond à l'ID ou Libellé brut
+                      String? safeSelectedValue;
+                      if (rawIdNature.isNotEmpty && rawIdNature != '0') {
+                        final found = items.firstWhere(
+                          (e) => (e['id'] ?? e['value'] ?? e['code'])?.toString() == rawIdNature || 
+                                 e['libelle']?.toString() == rawIdNature,
+                          orElse: () => <String, dynamic>{},
+                        );
+                        if (found.isNotEmpty) {
+                           safeSelectedValue = (found['id'] ?? found['value'] ?? found['code'])?.toString();
+                           // Si le contrôleur avait un libellé, corrigeons-le en ID
+                           WidgetsBinding.instance.addPostFrameCallback((_) {
+                             if (ctrls['idNature']!.text != safeSelectedValue) {
+                                ctrls['idNature']!.text = safeSelectedValue ?? '';
+                             }
+                           });
+                        }
+                      }
+
                       final dropdownItems = items.map<DropdownMenuItem<String>>((e) {
                         final id = e['id'] ?? e['value'] ?? e['code'];
                         final label = e['libelle'] ?? e['label'] ?? e['name'] ?? id?.toString() ?? '';
                         return DropdownMenuItem<String>(
                           value: id?.toString(),
-                          child: Text(label.toString()), // Dans la liste ouverte, le texte peut rester normal
+                          child: Text(label.toString()), // Dans la liste pleine
                         );
                       }).toList();
 
                       return DropdownButtonFormField<String>(
-                        value: selectedValue,
+                        value: safeSelectedValue,
                         isExpanded: true, // 1. Obligatoire pour permettre au texte de se tronquer
                         
                         // 2. Personnalise l'affichage du texte une fois sélectionné
@@ -183,7 +205,7 @@ class StepEditClient extends ConsumerWidget {
     );
   }
 
-  Widget _buildField(BuildContext context, String label, String key, {required String hint}) {
+  Widget _buildField(BuildContext context, String label, String key, {required String hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,6 +214,8 @@ class StepEditClient extends ConsumerWidget {
         TextField(
           controller: ctrls[key],
           focusNode: nodes[key] ?? FocusNode(),
+          keyboardType: keyboardType ?? TextInputType.text,
+          inputFormatters: inputFormatters,
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
           decoration: inputDec(context: context, hint: hint, error: errors[key]),
         ),
@@ -211,6 +235,7 @@ class StepEditClient extends ConsumerWidget {
       if (user?.dateJour != null) {
         minDate = user!.dateJour!; 
       }
+      minDate = DateTime(minDate.year, minDate.month, minDate.day);
     }
 
     return Column(
@@ -228,18 +253,38 @@ class StepEditClient extends ConsumerWidget {
             suffixIcon: const Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.primary),
           ),
           onTap: () async {
-            final initialDate = isFuture 
-                ? minDate.add(const Duration(days: 30)) 
+            DateTime? parsedDate;
+            try {
+              if (ctrls[key]!.text.isNotEmpty) {
+                final parts = ctrls[key]!.text.split('/');
+                if (parts.length == 3) {
+                  parsedDate = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                }
+              }
+            } catch (_) {}
+
+            DateTime defaultInitial = isFuture 
+                ? minDate.add(const Duration(days: 365)) 
                 : DateTime.now().subtract(const Duration(days: 6570));
                 
-            // Ensure initialDate is not before firstDate
-            final effectiveInitial = initialDate.isBefore(minDate) ? minDate : initialDate;
+            DateTime targetInitial = parsedDate ?? defaultInitial;
+
+            // Ensure initialDate is not before firstDate or after lastDate
+            final firstDate = isFuture ? minDate : DateTime(1900);
+            final lastDate = isFuture ? DateTime(2100) : DateTime.now();
+
+            if (targetInitial.isBefore(firstDate)) {
+               targetInitial = firstDate;
+            }
+            if (targetInitial.isAfter(lastDate)) {
+               targetInitial = lastDate;
+            }
 
             final p = await showDatePicker(
               context: context,
-              initialDate: effectiveInitial,
-              firstDate: isFuture ? minDate : DateTime(1900),
-              lastDate: isFuture ? DateTime(2100) : DateTime.now(),
+              initialDate: targetInitial,
+              firstDate: firstDate,
+              lastDate: lastDate,
               builder: (context, child) => Theme(
                 data: theme.copyWith(colorScheme: theme.colorScheme.copyWith(primary: AppColors.primary)),
                 child: child!,

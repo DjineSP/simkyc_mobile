@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:simkyc_mobile/l10n/gen/app_localizations.dart';
+
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/utils/phone_formatter.dart';
 import '../components/activation_helpers.dart';
 
 class StepCustomerInfo extends StatelessWidget {
@@ -76,7 +79,15 @@ class StepCustomerInfo extends StatelessWidget {
           // ADRESSES ET PROFESSION
           _buildField(context, l10n.step_cust_geo, 'geo', hint: l10n.step_cust_hint_geo),
           _buildField(context, l10n.step_cust_post, 'post', hint: l10n.step_cust_hint_post),
-          _buildField(context, l10n.step_cust_email, 'email', hint: l10n.step_cust_hint_email),
+          _buildField(
+            context, 
+            l10n.step_cust_client_phone, 
+            'clientPhone', 
+            hint: l10n.step_cust_hint_client_phone, 
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, PhoneFormatter()],
+          ),
+          _buildField(context, l10n.step_cust_email, 'email', hint: l10n.step_cust_hint_email, keyboardType: TextInputType.emailAddress),
           _buildField(context, l10n.step_cust_job, 'job', hint: l10n.step_cust_hint_job),
         ],
       ),
@@ -109,7 +120,7 @@ class StepCustomerInfo extends StatelessWidget {
     }
   }
 
-  Widget _buildField(BuildContext context, String label, String key, {required String hint}) {
+  Widget _buildField(BuildContext context, String label, String key, {required String hint, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
     final controller = ctrls[key];
     final node = nodes[key];
     final error = errors[key];
@@ -122,6 +133,8 @@ class StepCustomerInfo extends StatelessWidget {
         TextField(
           controller: controller,
           focusNode: node,
+          keyboardType: keyboardType ?? TextInputType.text,
+          inputFormatters: inputFormatters,
           textCapitalization: TextCapitalization.words,
           style: TextStyle(
             fontSize: 14,
