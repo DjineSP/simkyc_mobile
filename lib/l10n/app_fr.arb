@@ -189,8 +189,15 @@
   "check_label_id_nature_other": "Autres",
   "check_label_id_number": "N° de pièce",
   "check_label_id_validity": "Date de validité",
-  "check_warning": "L'opération doit être refusée si les informations ci-dessus ne sont pas conformes à la pièce présentée.",
+  "check_warning": "Le système rejettera l'opération si les informations ci-dessus ne sont pas conformes à la pièce présentée.",
   "check_status_unknown": "Suspendue / Perdue",
+
+  "mrz_scanner_title": "Scanner le MRZ",
+  "mrz_scanner_help": "Alignez la zone MRZ dans le cadre",
+  "mrz_camera_permission_denied": "Permission caméra refusée de façon permanente.",
+  "mrz_camera_permission_required": "Permission caméra requise pour scanner.",
+  "mrz_open_settings": "Ouvrir les paramètres",
+  "mrz_retry": "Réessayer",
 
   "step_cust_lastname": "Nom *",
   "step_cust_firstname": "Prénoms *",

@@ -12,6 +12,7 @@ class StepCustomerInfo extends StatelessWidget {
   final Map<String, String?> errors;
   final bool isMale;
   final Function(bool) onGenderChanged;
+  final VoidCallback? onScanId;
 
   const StepCustomerInfo({
     super.key,
@@ -20,6 +21,7 @@ class StepCustomerInfo extends StatelessWidget {
     required this.errors,
     required this.isMale,
     required this.onGenderChanged,
+    this.onScanId,
   });
 
   @override
@@ -31,6 +33,9 @@ class StepCustomerInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- BOUTON SCAN PIÈCE D'IDENTITÉ ---
+          if (onScanId != null) ..._buildScanButton(context, theme),
+
           // NOM ET PRÉNOM
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,6 +97,50 @@ class StepCustomerInfo extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildScanButton(BuildContext context, ThemeData theme) {
+    return [
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: onScanId,
+          icon: const Icon(Icons.document_scanner_rounded, size: 20),
+          label: const Text(
+            "Scanner la pièce d'identité",
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            side: const BorderSide(color: AppColors.primary, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: AppColors.primary.withOpacity(0.05),
+          ),
+        ),
+      ),
+      const SizedBox(height: 20),
+      Row(
+        children: [
+          Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.2))),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              'ou remplir manuellement',
+              style: TextStyle(
+                fontSize: 11,
+                color: theme.colorScheme.onSurface.withOpacity(0.45),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.2))),
+        ],
+      ),
+      const SizedBox(height: 20),
+    ];
   }
 
   Future<void> _selectDate(BuildContext context) async {

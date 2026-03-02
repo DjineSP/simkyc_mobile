@@ -46,41 +46,38 @@ class SimActivationRepository {
   }
 
   Future<String> fetchMsisdnFromSerial(String serial) async {
-    try {
 
+    // ---- Endpoint réel (à réactiver en production) ----------
+    try {
       final response = await ApiClient.instance.dio.get(
         '/api/Activation_Sim/GetMSISDN/$serial',
         options: Options(responseType: ResponseType.plain),
       );
-
+    
       final data = response.data?.toString();
-      
+    
       if (data == null || data.isEmpty) {
         throw Exception('Réponse vide du serveur');
       }
-
+    
       // Le serveur renvoie soit le MSISDN (ex: "658802241"), soit un message d'erreur
-      // On considère que c'est un MSISDN valide s'il ne contient que des chiffres (et éventuellement des espaces)
+      // On considère que c'est un MSISDN valide s'il ne contient que des chiffres
       final cleanData = data.replaceAll(RegExp(r'\s+'), '');
       if (RegExp(r'^\d+$').hasMatch(cleanData)) {
-         return cleanData;
+        return cleanData;
       }
-
-      // Sinon, c'est un message d'erreur texte (ex: "La carte SIM a été annulée...")
+    
+      // Sinon, c'est un message d'erreur texte
       throw Exception(data);
-
+    
     } on DioException catch (e) {
       if (e.response?.data != null) {
-         final raw = e.response?.data.toString();
-         if (raw != null && raw.isNotEmpty) {
-           throw Exception(raw);
-         }
+        final raw = e.response?.data.toString();
+        if (raw != null && raw.isNotEmpty) throw Exception(raw);
       }
-      
       final statusCode = e.response?.statusCode;
       if (statusCode == 404) throw Exception("Numéro de série introuvable");
       if (statusCode == 500) throw Exception("Erreur serveur lors de la récupération du MSISDN");
-      
       throw Exception(e.message ?? 'Erreur lors de la récupération du MSISDN');
     }
   }

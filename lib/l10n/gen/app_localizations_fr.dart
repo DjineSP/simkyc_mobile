@@ -545,10 +545,30 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get check_warning =>
-      'L\'opération doit être refusée si les informations ci-dessus ne sont pas conformes à la pièce présentée.';
+      'Le système rejettera l\'opération si les informations ci-dessus ne sont pas conformes à la pièce présentée.';
 
   @override
   String get check_status_unknown => 'Suspendue / Perdue';
+
+  @override
+  String get mrz_scanner_title => 'Scanner le MRZ';
+
+  @override
+  String get mrz_scanner_help => 'Alignez la zone MRZ dans le cadre';
+
+  @override
+  String get mrz_camera_permission_denied =>
+      'Permission caméra refusée de façon permanente.';
+
+  @override
+  String get mrz_camera_permission_required =>
+      'Permission caméra requise pour scanner.';
+
+  @override
+  String get mrz_open_settings => 'Ouvrir les paramètres';
+
+  @override
+  String get mrz_retry => 'Réessayer';
 
   @override
   String get step_cust_lastname => 'Nom *';

@@ -15,7 +15,7 @@ import 'widgets/step_customer_info.dart';
 import 'widgets/step_id_details.dart';
 import 'widgets/step_photo_upload.dart';
 import 'widgets/step_validation.dart';
-
+import 'widgets/id_scanner_helper.dart';
 class SimActivationPage extends ConsumerStatefulWidget {
   const SimActivationPage({super.key});
 
@@ -204,6 +204,30 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
     }
   }
 
+  Future<void> _onScanId() async {
+    final result = await IdScannerHelper.scanId(context);
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _ctrls['lastName']!.text    = result.lastName;
+      _ctrls['firstName']!.text   = result.firstName;
+      _ctrls['dob']!.text         = result.dob;
+      _ctrls['pob']!.text         = result.pob;
+      _ctrls['geo']!.text         = result.geo;
+      _ctrls['post']!.text        = result.post;
+      _ctrls['email']!.text       = result.email;
+      _ctrls['job']!.text         = result.job;
+      _ctrls['clientPhone']!.text = result.clientPhone;
+      _isMale = result.isMale;
+      _ctrls['idNature']!.text    = result.idNature;
+      _ctrls['idNumber']!.text    = result.idNumber;
+      _ctrls['idValidity']!.text  = result.idValidity;
+      _frontImg = result.frontImg ?? _frontImg;
+      _backImg  = result.backImg ?? _backImg;
+      _errors.clear();
+    });
+  }
+
   void _submitFinal() async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -308,7 +332,7 @@ class _SimActivationPageState extends ConsumerState<SimActivationPage> {
         serialError: _errors['serial'],
         onFetchMsisdn: _fetchSimDataManually,
       );
-      case 2: return StepCustomerInfo(ctrls: _ctrls, nodes: _nodes, errors: _errors, isMale: _isMale, onGenderChanged: (v) => setState(() => _isMale = v));
+      case 2: return StepCustomerInfo(ctrls: _ctrls, nodes: _nodes, errors: _errors, isMale: _isMale, onGenderChanged: (v) => setState(() => _isMale = v), onScanId: _onScanId);
       case 3: 
         final user = ref.read(authProvider).asData?.value?.userData;
         final minDate = user?.dateJour ?? DateTime.now();

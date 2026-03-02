@@ -1127,7 +1127,7 @@ abstract class AppLocalizations {
   /// No description provided for @check_warning.
   ///
   /// In en, this message translates to:
-  /// **'The operation must be refused if the above information does not match the presented ID.'**
+  /// **'The system will reject the operation if the above information does not match the document presented.'**
   String get check_warning;
 
   /// No description provided for @check_status_unknown.
@@ -1135,6 +1135,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suspended / Lost'**
   String get check_status_unknown;
+
+  /// No description provided for @mrz_scanner_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan MRZ'**
+  String get mrz_scanner_title;
+
+  /// No description provided for @mrz_scanner_help.
+  ///
+  /// In en, this message translates to:
+  /// **'Align the MRZ (Machine Readable Zone) within the frame'**
+  String get mrz_scanner_help;
+
+  /// No description provided for @mrz_camera_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission permanently denied.'**
+  String get mrz_camera_permission_denied;
+
+  /// No description provided for @mrz_camera_permission_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission is required to scan.'**
+  String get mrz_camera_permission_required;
+
+  /// No description provided for @mrz_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get mrz_open_settings;
+
+  /// No description provided for @mrz_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get mrz_retry;
 
   /// No description provided for @step_cust_lastname.
   ///

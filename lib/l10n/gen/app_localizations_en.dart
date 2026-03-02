@@ -543,10 +543,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get check_warning =>
-      'The operation must be refused if the above information does not match the presented ID.';
+      'The system will reject the operation if the above information does not match the document presented.';
 
   @override
   String get check_status_unknown => 'Suspended / Lost';
+
+  @override
+  String get mrz_scanner_title => 'Scan MRZ';
+
+  @override
+  String get mrz_scanner_help =>
+      'Align the MRZ (Machine Readable Zone) within the frame';
+
+  @override
+  String get mrz_camera_permission_denied =>
+      'Camera permission permanently denied.';
+
+  @override
+  String get mrz_camera_permission_required =>
+      'Camera permission is required to scan.';
+
+  @override
+  String get mrz_open_settings => 'Open settings';
+
+  @override
+  String get mrz_retry => 'Retry';
 
   @override
   String get step_cust_lastname => 'Last Name *';

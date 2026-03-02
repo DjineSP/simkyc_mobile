@@ -183,9 +183,15 @@
   "check_label_id_nature_other": "Others",
   "check_label_id_number": "ID Number",
   "check_label_id_validity": "Expiry date",
-  "check_warning": "The operation must be refused if the above information does not match the presented ID.",
+  "check_warning": "The system will reject the operation if the above information does not match the document presented.",
   "check_status_unknown": "Suspended / Lost",
-
+  
+  "mrz_scanner_title": "Scan MRZ",
+  "mrz_scanner_help": "Align the MRZ (Machine Readable Zone) within the frame",
+  "mrz_camera_permission_denied": "Camera permission permanently denied.",
+  "mrz_camera_permission_required": "Camera permission is required to scan.",
+  "mrz_open_settings": "Open settings",
+  "mrz_retry": "Retry",
 
   "step_cust_lastname": "Last Name *",
   "step_cust_firstname": "First Names *",
