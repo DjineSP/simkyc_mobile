@@ -43,6 +43,43 @@ class ApiClient {
           handler.next(options);
         },
         onError: (DioException error, ErrorInterceptorHandler handler) async {
+          // Mechanism to retry on timeout
+          if (error.type == DioExceptionType.connectionTimeout || 
+              error.type == DioExceptionType.receiveTimeout || 
+              error.type == DioExceptionType.sendTimeout) {
+            
+            final options = error.requestOptions;
+            final maxRetries = 3; // Maximum number of retries
+            final currentRetry = options.extra['retryCount'] as int? ?? 0;
+
+            if (currentRetry < maxRetries) {
+              options.extra['retryCount'] = currentRetry + 1;
+              // Exponential fallback: 2s, 4s, 6s...
+              final delay = Duration(seconds: 2 * (currentRetry + 1));
+              debugPrint('Request timeout. Retrying in background (${currentRetry + 1}/$maxRetries) in ${delay.inSeconds}s...');
+              
+              await Future.delayed(delay);
+              
+              try {
+                // Re-execute the request. It will go through interceptors again.
+                final response = await dio.fetch(options);
+                return handler.resolve(response);
+              } on DioException catch (e) {
+                return handler.next(e);
+              } catch (e) {
+                return handler.next(error);
+              }
+            }
+            // If max retries reached, we let it fall through but with a custom message
+            return handler.next(DioException(
+              requestOptions: options,
+              error: 'Erreur de connexion, veuillez vérifier votre réseau et réessayer.',
+              type: error.type,
+              response: error.response,
+              message: 'Erreur de connexion, veuillez vérifier votre réseau et réessayer.',
+            ));
+          }
+
           if (error.response?.statusCode == 401) {
             final options = error.requestOptions;
 
