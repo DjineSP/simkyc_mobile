@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../l10n/gen/app_localizations.dart';
@@ -64,6 +65,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
   int? _idActivationSim;
   File? _frontImg;
   File? _backImg;
+  bool _isFrontAnalyzing = false;
 
   List<int>? _tryDecodeBytes(dynamic raw) {
     if (raw == null) return null;
@@ -330,6 +332,32 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     }
   }
 
+  /// Vérifie si l'image contient au moins un visage via ML Kit.
+  Future<bool> _detectFace(String imagePath) async {
+    final faceDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        performanceMode: FaceDetectorMode.accurate,
+        enableClassification: false,
+        enableLandmarks: false,
+        enableContours: false,
+      ),
+    );
+    bool result = true;
+    try {
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final List<Face> faces = await faceDetector.processImage(inputImage);
+      result = faces.isNotEmpty;
+    } catch (e) {
+      debugPrint('FaceDetector error: $e');
+      result = true; // Laisser passer en cas d'erreur
+    } finally {
+      try {
+        await faceDetector.close();
+      } catch (_) {}
+    }
+    return result;
+  }
+
   void _handlePhotoAction(bool isFront) async {
     _closeKeyboard();
 
@@ -340,9 +368,10 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
     final source = await _showSourceDialog();
     if (source == null) return;
 
-    final XFile? pickedFile =
-    await picker.pickImage(source: source, imageQuality: 80);
+    final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 80);
     if (pickedFile == null) return;
+
+    if (!mounted) return;
 
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: pickedFile.path,
@@ -351,28 +380,62 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
           toolbarTitle: l10n.step_photo_crop_title,
           toolbarColor: theme.colorScheme.primary,
           toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: theme.colorScheme.primary,
           initAspectRatio: CropAspectRatioPreset.ratio16x9,
-          lockAspectRatio: true,
-          aspectRatioPresets: const [CropAspectRatioPreset.ratio16x9],
+          lockAspectRatio: false,
         ),
         IOSUiSettings(
           title: l10n.step_photo_crop_title,
-          aspectRatioPresets: const [CropAspectRatioPreset.ratio16x9],
+          aspectRatioLockEnabled: false,
         ),
       ],
     );
 
+    if (croppedFile == null) return;
     if (!mounted) return;
 
-    if (croppedFile != null) {
-      setState(() {
-        if (isFront) {
-          _frontImg = File(croppedFile.path);
-        } else {
-          _backImg = File(croppedFile.path);
-        }
-      });
+    // Vérification du visage uniquement pour le recto
+    if (isFront) {
+      setState(() => _isFrontAnalyzing = true);
+
+      final hasFace = await _detectFace(croppedFile.path);
+
+      if (!mounted) return;
+      setState(() => _isFrontAnalyzing = false);
+
+      if (!hasFace) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.face_retouching_off, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Aucun visage détecté. Veuillez vous assurer que la photo recto de votre pièce d\'identité montre clairement votre visage.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+        return; // Rejeter l'image
+      }
     }
+
+    if (!mounted) return;
+    setState(() {
+      if (isFront) {
+        _frontImg = File(croppedFile.path);
+      } else {
+        _backImg = File(croppedFile.path);
+      }
+    });
   }
 
   Future<ImageSource?> _showSourceDialog() {
@@ -555,6 +618,7 @@ class _SimUpdatePageState extends ConsumerState<SimUpdatePage> {
           errors: _errors,
           frontImg: _frontImg,
           backImg: _backImg,
+          isFrontAnalyzing: _isFrontAnalyzing,
           onPhotoUpdate: (file, isFront) => _handlePhotoAction(isFront),
         );
       case 3:

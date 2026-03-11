@@ -46,6 +46,7 @@ class SimActivationRepository {
   }
 
   Future<String> fetchMsisdnFromSerial(String serial) async {
+    // return "658802241";
 
     // ---- Endpoint réel (à réactiver en production) ----------
     try {

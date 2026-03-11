@@ -17,6 +17,7 @@ class StepEditClient extends ConsumerWidget {
   final File? frontImg;
   final File? backImg;
   final Function(File? file, bool isFront) onPhotoUpdate;
+  final bool isFrontAnalyzing;
 
   const StepEditClient({
     super.key,
@@ -26,6 +27,7 @@ class StepEditClient extends ConsumerWidget {
     this.frontImg,
     this.backImg,
     required this.onPhotoUpdate,
+    this.isFrontAnalyzing = false,
   });
 
   @override
@@ -191,7 +193,7 @@ class StepEditClient extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: _EditPhotoBox(label: l10n.step_edit_photo_recto, image: frontImg, error: errors['idFront'], onTap: () => onPhotoUpdate(null, true))),
+                      Expanded(child: _EditPhotoBox(label: l10n.step_edit_photo_recto, image: frontImg, error: errors['idFront'], isAnalyzing: isFrontAnalyzing, onTap: () => onPhotoUpdate(null, true))),
                       const SizedBox(width: 12),
                       Expanded(child: _EditPhotoBox(label: l10n.step_edit_photo_verso, image: backImg, error: errors['idBack'], onTap: () => onPhotoUpdate(null, false))),
                     ],
@@ -314,9 +316,10 @@ class _EditPhotoBox extends StatelessWidget {
   final String label;
   final File? image;
   final String? error;
+  final bool isAnalyzing;
   final VoidCallback onTap;
 
-  const _EditPhotoBox({required this.label, this.image, this.error, required this.onTap});
+  const _EditPhotoBox({required this.label, this.image, this.error, this.isAnalyzing = false, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -339,7 +342,28 @@ class _EditPhotoBox extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: image != null
+              child: isAnalyzing
+                  ? Container(
+                      color: Colors.black.withOpacity(0.55),
+                      child: const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(color: Colors.white),
+                            SizedBox(height: 8),
+                            Text(
+                              'Analyse...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : image != null
                   ? Stack(fit: StackFit.expand, children: [
                 Image.file(image!, fit: BoxFit.cover),
                 Container(

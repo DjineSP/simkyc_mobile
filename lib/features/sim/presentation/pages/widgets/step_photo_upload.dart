@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 import '../../../../../l10n/gen/app_localizations.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -31,6 +32,7 @@ class StepPhotoUpload extends StatefulWidget {
 
 class _StepPhotoUploadState extends State<StepPhotoUpload> {
   final ImagePicker _picker = ImagePicker();
+  bool _isAnalyzing = false;
 
   void _showSourcePicker(BuildContext context, bool isFront) {
     final theme = Theme.of(context);
@@ -85,6 +87,36 @@ class _StepPhotoUploadState extends State<StepPhotoUpload> {
     );
   }
 
+  /// Vérifie si l'image contient au moins un visage via ML Kit.
+  /// Retourne `true` si un visage est détecté, `false` sinon.
+  Future<bool> _detectFace(String imagePath) async {
+    final faceDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        performanceMode: FaceDetectorMode.accurate,
+        enableClassification: false,
+        enableLandmarks: false,
+        enableContours: false,
+      ),
+    );
+    bool result = true; // Par défaut : laisser passer en cas d'erreur
+    try {
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final List<Face> faces = await faceDetector.processImage(inputImage);
+      result = faces.isNotEmpty;
+    } catch (e) {
+      debugPrint('FaceDetector error: $e');
+      // En cas d'erreur, on laisse passer pour ne pas bloquer l'utilisateur
+      result = true;
+    } finally {
+      try {
+        await faceDetector.close();
+      } catch (_) {
+        // Ignorer les erreurs de fermeture du détecteur
+      }
+    }
+    return result;
+  }
+
   Future<void> _processAction(ImageSource source, bool isFront) async {
     try {
       final XFile? photo = await _picker.pickImage(source: source, imageQuality: 80);
@@ -110,10 +142,46 @@ class _StepPhotoUploadState extends State<StepPhotoUpload> {
         ],
       );
 
-      if (croppedFile != null) {
-        widget.onPhotoCaptured(File(croppedFile.path), isFront);
+      if (croppedFile == null) return;
+
+      // Vérification du visage uniquement pour le recto
+      if (isFront) {
+        if (!mounted) return;
+        setState(() => _isAnalyzing = true);
+
+        final hasFace = await _detectFace(croppedFile.path);
+
+        if (!mounted) return;
+        setState(() => _isAnalyzing = false);
+
+        if (!hasFace) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.face_retouching_off, color: Colors.white),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Aucun visage détecté. Veuillez vous assurer que la photo recto de votre pièce d\'identité montre clairement votre visage.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+          return; // Rejeter l'image
+        }
       }
+
+      widget.onPhotoCaptured(File(croppedFile.path), isFront);
     } catch (e) {
+      if (mounted) setState(() => _isAnalyzing = false);
       debugPrint("Erreur Photo: $e");
     }
   }
@@ -121,6 +189,7 @@ class _StepPhotoUploadState extends State<StepPhotoUpload> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,7 +204,8 @@ class _StepPhotoUploadState extends State<StepPhotoUpload> {
               : l10n.step_photo_subtitle_capture,
           icon: widget.frontImage != null ? Icons.check_circle : Icons.upload_rounded,
           imageFile: widget.frontImage,
-          errorText: widget.frontError, // Passage de l'erreur
+          errorText: widget.frontError,
+          isAnalyzing: _isAnalyzing,
           onTap: () => _showSourcePicker(context, true),
         ),
 
@@ -166,6 +236,7 @@ class _UploadBox extends StatelessWidget {
   final IconData icon;
   final File? imageFile;
   final String? errorText;
+  final bool isAnalyzing;
   final VoidCallback onTap;
 
   const _UploadBox({
@@ -174,6 +245,7 @@ class _UploadBox extends StatelessWidget {
     required this.icon,
     this.imageFile,
     this.errorText,
+    this.isAnalyzing = false,
     required this.onTap,
   });
 
@@ -212,7 +284,28 @@ class _UploadBox extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (imageFile != null) Image.file(imageFile!, fit: BoxFit.cover),
-                  if (imageFile != null)
+                  if (isAnalyzing)
+                    Container(
+                      color: Colors.black.withOpacity(0.55),
+                      child: const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(color: Colors.white),
+                            SizedBox(height: 12),
+                            Text(
+                              'Analyse du visage...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (imageFile != null)
                     Container(
                       color: Colors.black.withOpacity(0.3),
                       child: Center(
