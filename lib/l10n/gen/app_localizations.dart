@@ -398,10 +398,16 @@ abstract class AppLocalizations {
   /// **'All dates'**
   String get history_date_all;
 
+  /// No description provided for @history_date_last_30_days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 days'**
+  String get history_date_last_30_days;
+
   /// No description provided for @history_date_range.
   ///
   /// In en, this message translates to:
-  /// **'From {start} to {end}'**
+  /// **'From {end} to {start}'**
   String history_date_range(Object end, Object start);
 
   /// No description provided for @history_empty.
@@ -1807,6 +1813,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pending'**
   String get history_status_pending;
+
+  /// No description provided for @history_label_start_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get history_label_start_date;
+
+  /// No description provided for @history_label_end_date.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get history_label_end_date;
+
+  /// No description provided for @history_error_range_too_long.
+  ///
+  /// In en, this message translates to:
+  /// **'The interval must not exceed 30 days.'**
+  String get history_error_range_too_long;
 }
 
 class _AppLocalizationsDelegate

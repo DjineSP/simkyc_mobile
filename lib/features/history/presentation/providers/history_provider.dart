@@ -7,6 +7,7 @@ import '../../data/repositories/history_repository.dart';
 import '../../domain/entities/history_item.dart';
 import '../../domain/entities/history_detail.dart';
 import '../../domain/repositories/history_repository.dart';
+import 'package:simkyc_mobile/core/providers/auth_provider.dart';
 
 // Cette classe semble être un filtre personnalisé, nous la conservons pour la compatibilité.
 class DateTimeRangeFilter { final DateTime start; final DateTime end; const DateTimeRangeFilter({required this.start, required this.end}); }
@@ -68,6 +69,9 @@ class HistoryNotifier extends Notifier<HistoryState> {
 
   @override
   HistoryState build() {
+    // Watch auth status to reset provider when user changes or logs out
+    ref.watch(authProvider);
+
     // Initial: Last 30 days
     final end = DateTime.now();
     final start = end.subtract(const Duration(days: 30));

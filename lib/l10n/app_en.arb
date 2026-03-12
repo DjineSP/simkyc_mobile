@@ -54,7 +54,8 @@
 
   "history_search_hint": "Search by name, MSISDN or ID...",
   "history_date_all": "All dates",
-  "history_date_range": "From {start} to {end}",
+  "history_date_last_30_days": "Last 30 days",
+  "history_date_range": "From {end} to {start}",
   "history_empty": "No history found",
   "history_status_active": "Active",
   "history_status_suspended": "Suspended",
@@ -309,5 +310,8 @@
   "history_filter_activation": "Activation",
   "history_filter_reactivation": "Reactivation",
   "history_filter_update": "Update",
-  "history_status_pending": "Pending"
+  "history_status_pending": "Pending",
+  "history_label_start_date": "Start",
+  "history_label_end_date": "End",
+  "history_error_range_too_long": "The interval must not exceed 30 days."
 }

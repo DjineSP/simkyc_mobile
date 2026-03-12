@@ -8,7 +8,6 @@ import '../../../../l10n/gen/app_localizations.dart';
 import '../../../../shared/widgets/app_message_dialog.dart';
 import '../providers/history_provider.dart';
 import '../../domain/entities/history_item.dart';
-import '../../domain/entities/history_item.dart';
 import '../../../../core/utils/string_utils.dart';
 import 'history_detail_page.dart';
 
@@ -166,7 +165,7 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
       onTap: () async {
         final picked = await showDateRangePicker(
           context: context,
-          firstDate: DateTime.now().subtract(const Duration(days: 30)),
+          firstDate: DateTime(2023),
           lastDate: DateTime.now(),
           initialDateRange: dateRange != null 
             ? DateTimeRange(start: dateRange.start, end: dateRange.end) 
@@ -177,7 +176,19 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
           ),
         );
         if (picked != null) {
-          ref.read(historyProvider.notifier).setDateRange(picked);
+          final days = picked.end.difference(picked.start).inDays;
+          if (days > 30) {
+            if (mounted) {
+              showAppMessageDialog(
+                context, 
+                title: l10n.common_error_title,
+                message: l10n.history_error_range_too_long,
+                type: AppMessageType.error,
+              );
+            }
+          } else {
+            ref.read(historyProvider.notifier).setDateRange(picked);
+          }
         }
       },
       child: Container(
@@ -199,17 +210,35 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
             ),
             if (dateRange != null)
               GestureDetector(
-                onTap: () {
-                   // Optional: Allow clearing to reset to default 30 days?
-                   // Provider handles null by resetting to default.
-                   ref.read(historyProvider.notifier).setDateRange(null);
-                },
-                child: const Icon(Icons.refresh, size: 18, color: AppColors.primary), // Changed icon to refresh/reset hint
+                onTap: () => ref.read(historyProvider.notifier).setDateRange(null),
+                child: const Icon(Icons.refresh, size: 18, color: AppColors.primary),
               ),
           ],
         ),
       ),
     );
+  }
+
+  String _getDateLabel(dynamic dateRange, AppLocalizations l10n) {
+    if (dateRange == null) return l10n.history_date_all;
+    
+    // Check if it's roughly the last 30 days (ends today/now)
+    final now = DateTime.now();
+    final isEndToday = _isSameDay(dateRange.end, now);
+    final diffDays = dateRange.end.difference(dateRange.start).inDays;
+
+    if (isEndToday && diffDays == 30) {
+      return l10n.history_date_last_30_days;
+    }
+
+    return l10n.history_date_range(
+      DateFormat('dd/MM/yy').format(dateRange.start),
+      DateFormat('dd/MM/yy').format(dateRange.end),
+    );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   Widget _buildFilterChips(AppLocalizations l10n) {
@@ -272,33 +301,8 @@ class _HistoryManagementPageState extends ConsumerState<HistoryManagementPage> {
       ),
     );
   }
-
-  String _getDateLabel(dynamic dateRange, AppLocalizations l10n) {
-    if (dateRange == null) return l10n.history_date_all;
-    
-    // Check for default 30 days
-    final now = DateTime.now();
-    // dateRange is DateTimeRangeFilter from HistoryState.
-    final start = dateRange.start as DateTime;
-    final end = dateRange.end as DateTime;
-
-    final isDefaultEnd = _isSameDay(end, now);
-    final days = end.difference(start).inDays;
-
-    if (isDefaultEnd && days == 30) {
-      return l10n.reports_period_30d;
-    }
-
-    return l10n.history_date_range(
-      DateFormat('dd/MM/yy').format(start),
-      DateFormat('dd/MM/yy').format(end),
-    );
-  }
 }
 
-bool _isSameDay(DateTime a, DateTime b) {
-  return a.year == b.year && a.month == b.month && a.day == b.day;
-}
 
 class _FilterChipCustom extends StatelessWidget {
   final String label;

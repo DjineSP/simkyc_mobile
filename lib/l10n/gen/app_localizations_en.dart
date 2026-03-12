@@ -161,8 +161,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get history_date_all => 'All dates';
 
   @override
+  String get history_date_last_30_days => 'Last 30 days';
+
+  @override
   String history_date_range(Object end, Object start) {
-    return 'From $start to $end';
+    return 'From $end to $start';
   }
 
   @override
@@ -891,4 +894,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get history_status_pending => 'Pending';
+
+  @override
+  String get history_label_start_date => 'Start';
+
+  @override
+  String get history_label_end_date => 'End';
+
+  @override
+  String get history_error_range_too_long =>
+      'The interval must not exceed 30 days.';
 }

@@ -55,7 +55,8 @@
 
   "history_search_hint": "Rechercher par nom, MSISDN ou ID...",
   "history_date_all": "Toutes les dates",
-  "history_date_range": "Du {start} au {end}",
+  "history_date_last_30_days": "30 derniers jours",
+  "history_date_range": "Du {end} au {start}",
   "@history_date_range": {
     "placeholders": {
      "start": { "type": "Object" },
@@ -315,5 +316,8 @@
   "history_filter_activation": "Activation",
   "history_filter_reactivation": "Réactivation",
   "history_filter_update": "Mise à jour",
-  "history_status_pending": "En attente"
+  "history_status_pending": "En attente",
+  "history_label_start_date": "Début",
+  "history_label_end_date": "Fin",
+  "history_error_range_too_long": "L'intervalle ne doit pas dépasser 30 jours."
 }

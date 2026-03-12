@@ -77,24 +77,28 @@ class AppScaffold extends ConsumerWidget {
           ),
           actions: [
             IconButton(
-              onPressed: () => context.push(Routes.notifications),
-              icon: const Icon(Icons.notifications_none_rounded),
+              onPressed: () => onNavTap(3), // Redirige vers l'onglet Profil
+              icon: const Icon(Icons.person_rounded),
             ),
-            const SizedBox(width: 6),
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GestureDetector(
-                onTap: () => onNavTap(3), // Redirige vers l'onglet Profil
-                child: CircleAvatar(
-                  radius: 14,
-                  backgroundColor: const Color(0x33FFFFFF),
-                  child: Text(
-                    initials,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
+            // IconButton(
+            //   onPressed: () => context.push(Routes.notifications),
+            //   icon: const Icon(Icons.notifications_none_rounded),
+            // ),
+            // // const SizedBox(width: 6),
+            // Padding(
+            //   padding: const EdgeInsets.only(right: 12),
+            //   child: GestureDetector(
+            //     onTap: () => onNavTap(3), // Redirige vers l'onglet Profil
+            //     child: CircleAvatar(
+            //       radius: 14,
+            //       backgroundColor: const Color(0x33FFFFFF),
+            //       child: Text(
+            //         initials,
+            //         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
         body: body, // Pas de SafeArea ici si on veut que le contenu touche les bords ou soit géré par les pages

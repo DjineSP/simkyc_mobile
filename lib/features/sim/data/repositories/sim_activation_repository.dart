@@ -132,10 +132,8 @@ class SimActivationRepository {
       }
       
       final statusCode = e.response?.statusCode;
-      if (statusCode == 400) throw Exception("Données d'activation invalides");
       if (statusCode == 500) throw Exception("Erreur serveur lors de l'activation");
-      
-      throw Exception(e.message ?? 'Erreur réseau lors de l\'activation');
+      throw Exception(e.message ?? 'Erreur lors de l\'activation');
     }
   }
 }
